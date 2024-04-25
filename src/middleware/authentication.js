@@ -129,6 +129,7 @@ class AuthService {
             });
             res.set('Set-Cookie', serialized);
 
+            user.dataValues.token = session.sessionId;
             return res.json(user);
         } catch (err) {
             return res.status(500).json({ Stack: `[AuthenticateError] - ${err}` });
