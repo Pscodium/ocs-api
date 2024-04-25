@@ -111,6 +111,7 @@ class AuthService {
                 });
                 res.set('Set-Cookie', serialized);
 
+                user.dataValues.token = session.sessionId;
                 return res.json(user);
             }
 
