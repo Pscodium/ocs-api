@@ -6,11 +6,7 @@
   "scripts": {
     "dev": "nodemon src/index.js",
     "start": "nodemon src/index.js",
-<<<<<<< HEAD
-    "build": "tsc",
-=======
     "build": "npm run load_database",
->>>>>>> f7d4f36 (load_database)
     "lint": "eslint ./src --ext js",
     "tests": "npm run load_database && mocha ./test/**.test.js --timeout 180000 --exit",
     "test": "npm run load_database && mocha ./test/before.test.js --timeout 180000 --exit",
