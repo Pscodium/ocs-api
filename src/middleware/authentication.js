@@ -99,10 +99,9 @@ class AuthService {
                 });
                 const session = await db.Session.create({
                     expiration_date: moment().add(3, 'day').valueOf(),
-                    jwt: null
+                    jwt: null,
+                    UserId: user.id
                 });
-                session.setUser(user);
-                await session.save();
 
                 const serialized = serialize('token', session.sessionId, {
                     expires: session.expiration_date,
@@ -117,10 +116,9 @@ class AuthService {
 
             const newSession = await db.Session.create({
                 expiration_date: moment().add(3, 'day').valueOf(),
-                jwt: null
+                jwt: null,
+                UserId: user.id
             });
-            newSession.setUser(user);
-            await newSession.save();
 
             const serialized = serialize('token', newSession.sessionId, {
                 expires: newSession.expiration_date,
@@ -129,7 +127,7 @@ class AuthService {
             });
             res.set('Set-Cookie', serialized);
 
-            user.dataValues.token = session.sessionId;
+            user.dataValues.token = newSession.sessionId;
             return res.json(user);
         } catch (err) {
             return res.status(500).json({ Stack: `[AuthenticateError] - ${err}` });
