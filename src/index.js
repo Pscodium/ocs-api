@@ -32,7 +32,7 @@ function start() {
         app.use(!disabled_logs ? logs : null);
         app.use(routes);
 
-        app.listen(10000);
+        app.listen(process.env.API_PORT);
 
         if (!disabled_logs) {
             console.log(logger.success("Connection established!"));
