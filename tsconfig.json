@@ -1,0 +1,41 @@
+{
+  "compilerOptions": {
+    "lib": [
+      "es5",
+      "es6"
+    ],
+    "target": "es5",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "outDir": "./build",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "sourceMap": true,
+    "resolveJsonModule": true,
+    "strictNullChecks": false,
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": false,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "incremental": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "typeRoots": [
+      "./public/@types",
+      "./public/node_modules/@types"
+    ]
+  },
+  "include": [
+    "./src/**/*.js",
+    "./src/**/**/*.js",
+    "./src/**/*.js",
+    "./src/*.js",
+    "**/*.js"
+  ],
+  "exclude": [
+    "node_modules",
+    "app"
+  ]
+}
