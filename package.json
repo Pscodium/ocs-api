@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "nodemon src/index.js",
     "start": "nodemon src/index.js",
+    "build": "tsc",
     "lint": "eslint ./src --ext js",
     "tests": "npm run load_database && mocha ./test/**.test.js --timeout 180000 --exit",
     "test": "npm run load_database && mocha ./test/before.test.js --timeout 180000 --exit",
@@ -40,6 +41,8 @@
     "chalk": "^3.0.0",
     "cookie": "^0.6.0",
     "cookie-parser": "^1.4.6",
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "tsc": "^2.0.4",
+    "typescript": "^5.4.5"
   }
 }
