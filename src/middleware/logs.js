@@ -1,11 +1,18 @@
 const chalk = require('chalk');
 
+/**
+ * 
+ * @param {import('express').Request} req 
+ * @param {import('express').Response} res 
+ * @param {import('express').NextFunction} next 
+ */
 exports.logs = (req, res, next) => {
 
     const startTime = new Date();
-    const { method, originalUrl } = req;
+    const { method, originalUrl, ip } = req;
 
     res.on('finish', () => {
+        const requestedAt = moment().format('DD-MM-YYYY HH:mm:ss')
         const elapsedTime = new Date().getTime() - startTime.getTime();
         const { statusCode } = res;
 
@@ -16,7 +23,7 @@ exports.logs = (req, res, next) => {
             statusColor = 'D74040';
         }
 
-        console.log(`${chalk.gray('[')}${chalk.bold.cyan(method)}${chalk.gray(']')} ${originalUrl} - ${chalk.hex('#' + statusColor)(statusCode)} (${chalk.yellow(elapsedTime + 'ms')})`);
+        console.log(`${chalk.gray('[')}${chalk.bold.cyan(method)}${chalk.gray(']')} ${originalUrl} - ${chalk.hex('#' + statusColor)(statusCode)} (${chalk.yellow(elapsedTime + 'ms')})  |  ${requestedAt}  |  ${ip}`);
     });
 
     next();
