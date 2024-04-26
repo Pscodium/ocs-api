@@ -10,10 +10,11 @@ const moment = require('moment');
 exports.logs = (req, res, next) => {
 
     const startTime = new Date();
-    const { method, originalUrl, ip } = req;
+    const { method, originalUrl } = req;
+    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
     res.on('finish', () => {
-        const requestedAt = moment().format('DD-MM-YYYY HH:mm:ss')
+        const requestedAt = moment().utcOffset(-3).format('DD-MM-YYYY HH:mm:ss')
         const elapsedTime = new Date().getTime() - startTime.getTime();
         const { statusCode } = res;
 
