@@ -105,6 +105,7 @@ class AuthService {
 
                 const serialized = serialize('token', session.sessionId, {
                     expires: session.expiration_date,
+                    domain: 'test.pscodium.dev',
                     path: '/'
                 });
                 res.set('Set-Cookie', serialized);
@@ -121,6 +122,7 @@ class AuthService {
 
             const serialized = serialize('token', newSession.sessionId, {
                 expires: newSession.expiration_date,
+                domain: 'test.pscodium.dev',
                 path: '/'
             });
             res.set('Set-Cookie', serialized);
