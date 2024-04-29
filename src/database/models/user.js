@@ -34,19 +34,6 @@ module.exports = function Users(sequelize) {
             defaultValue: 'https://power.staging.onyo.com/assets/img/placeholder-user.png',
             allowNull: true
         },
-        bannerProfile: {
-            type: DataTypes.STRING,
-            defaultValue: 'https://t.ctcdn.com.br/kC0J0zzhQG39M0iYo3NxtI02pG0=/640x360/smart/i517469.jpeg',
-            allowNull: true
-        },
-        biography: {
-            type: DataTypes.STRING,
-            allowNull: true
-        },
-        title: {
-            type: DataTypes.STRING,
-            allowNull: true
-        },
         nickname: {
             type: DataTypes.STRING,
             allowNull: false,

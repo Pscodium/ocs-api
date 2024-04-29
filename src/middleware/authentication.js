@@ -105,6 +105,7 @@ class AuthService {
 
                 const serialized = serialize('token', session.sessionId, {
                     expires: session.expiration_date,
+                    domain: process.env.FRONTEND_DOMAIN,
                     sameSite: 'strict',
                     path: '/'
                 });
@@ -122,6 +123,7 @@ class AuthService {
 
             const serialized = serialize('token', newSession.sessionId, {
                 expires: newSession.expiration_date,
+                domain: process.env.FRONTEND_DOMAIN,
                 sameSite: 'strict',
                 path: '/'
             });
