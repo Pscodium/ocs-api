@@ -71,7 +71,7 @@ async function createUser({ firstName, lastName, email, password, nickname, isAd
             lastName: lastName,
             nickname: nickname,
             password: passwordHashed,
-            PermissionsId: permissions.id
+            PermissionId: permissions.id
         });
         permissions.UserId = user.id;
         await permissions.save();
