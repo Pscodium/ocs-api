@@ -105,7 +105,7 @@ class AuthService {
 
                 const serialized = serialize('token', session.sessionId, {
                     expires: session.expiration_date,
-                    domain: 'pscodium.dev',
+                    domain: process.env.FRONTEND_DOMAIN,
                     secure: true,
                     sameSite: 'none',
                     path: '/'
@@ -124,7 +124,7 @@ class AuthService {
 
             const serialized = serialize('token', newSession.sessionId, {
                 expires: newSession.expiration_date,
-                domain: 'pscodium.dev',
+                domain: process.env.FRONTEND_DOMAIN,
                 secure: true,
                 sameSite: 'none',
                 path: '/'
@@ -151,6 +151,7 @@ class AuthService {
                 }
             });
             if (deletedSessions > 0) {
+                this.removeTokenFromWeb(res)
                 return res.status(200).json({
                     success: true,
                 });
@@ -324,10 +325,12 @@ class AuthService {
      * @param {import('express').Response} res
      */
     async removeTokenFromWeb(res) {
-        const serialized = serialize('token', '', {
-            maxAge: -1
+        res.clearCookie('token', {
+            domain: process.env.FRONTEND_DOMAIN,
+            path: '/'
         });
-        res.set('Set-Cookie', serialized);
+
+        res.status(200).json({ success: true });
     }
 
     hasPermissions(permissions) {
