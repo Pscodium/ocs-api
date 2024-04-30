@@ -151,7 +151,7 @@ class AuthService {
                 }
             });
             if (deletedSessions > 0) {
-                this.removeTokenFromWeb(res)
+                await this.removeTokenFromWeb(res)
                 return res.status(200).json({
                     success: true,
                 });
