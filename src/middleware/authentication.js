@@ -151,7 +151,13 @@ class AuthService {
                 }
             });
             if (deletedSessions > 0) {
-                await this.removeTokenFromWeb(res)
+                res.clearCookie('token', {
+                    domain: process.env.FRONTEND_DOMAIN,
+                    sameSite: 'none',
+                    secure: true,
+                    path: '/'
+                });
+
                 return res.status(200).json({
                     success: true,
                 });
@@ -308,29 +314,26 @@ class AuthService {
     async check(req, res) {
         try {
             if (!req.user) {
-                this.removeTokenFromWeb(res);
+                res.clearCookie('token', {
+                    domain: process.env.FRONTEND_DOMAIN,
+                    sameSite: 'none',
+                    secure: true,
+                    path: '/'
+                });
 
                 return res.sendStatus(401);
             }
             return res.status(200).json(req.user);
         } catch (err) {
-            this.removeTokenFromWeb(res);
+            res.clearCookie('token', {
+                domain: process.env.FRONTEND_DOMAIN,
+                sameSite: 'none',
+                secure: true,
+                path: '/'
+            });
             console.error(err);
             return res.sendStatus(401);
         }
-    }
-
-    /**
-     *
-     * @param {import('express').Response} res
-     */
-    async removeTokenFromWeb(res) {
-        res.clearCookie('token', {
-            domain: process.env.FRONTEND_DOMAIN,
-            path: '/'
-        });
-
-        res.status(200).json({ success: true });
     }
 
     hasPermissions(permissions) {
