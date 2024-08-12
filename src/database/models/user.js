@@ -37,7 +37,6 @@ module.exports = function Users(sequelize) {
         nickname: {
             type: DataTypes.STRING,
             allowNull: false,
-            unique: true,
             validate: {
                 is: /^[a-zA-Z0-9_]+$/
             }
