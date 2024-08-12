@@ -66,7 +66,8 @@ exports.getArticlesByTagId = async (req, res) => {
                         id: tagId
                     }
                 }
-            ]
+            ],
+            order: [['title', 'ASC']],
         });
 
         return res.status(200).json(articles);
@@ -87,7 +88,8 @@ exports.getAllArticles = async (req, res) => {
                         attributes: []
                     }
                 }
-            ]
+            ],
+            order: [['title', 'ASC']],
         });
         return res.status(200).json(articles);
     } catch (e) {
@@ -124,14 +126,43 @@ exports.deleteArticle = async (req, res) => {
         const { id } = req.params;
         
         const articleExists = await db.Articles.findOne({
-            where: { id }
+            where: { id },
+            include: [
+                {
+                    model: db.Tags,
+                    as: "Tags"
+                }
+            ]
         });
 
         if (!articleExists) {
             return res.status(404).json({ message: "Article not found" })
         }
 
+        await articleExists.setTags([]);
         await articleExists.destroy();
+
+        return res.sendStatus(200);
+    } catch (e) {
+        console.error(e);
+        return res.sendStatus(500);
+    }
+}
+
+exports.deleteTag = async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        const tagExists = await db.Tags.findOne({
+            where: { id },
+        })
+
+        if (!tagExists) {
+            return res.status(404).json({ message: "Tag not found" })
+        }
+
+        await tagExists.setArticles([]);
+        await tagExists.destroy();
 
         return res.sendStatus(200);
     } catch (e) {
@@ -157,7 +188,8 @@ exports.getAllTags = async (req, res) => {
                     [db.sequelize.literal('(SELECT COUNT(*) FROM `article_tags` WHERE `article_tags`.`TagId` = `Tags`.`id`)'), 'articlesCount']
                 ]
             },
-            group: ['Tags.id', 'Articles.id']
+            group: ['Tags.id', 'Articles.id'],
+            order: [['title', 'ASC']],
         })
 
         return res.status(200).json(tags);
