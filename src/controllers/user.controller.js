@@ -1,4 +1,3 @@
-/* eslint-disable prefer-const */
 const db = require('../config/sequelize');
 const { uReqCleaner, uAdminReqCleaner } = require('../services/request.service');
 require('dotenv').config();
