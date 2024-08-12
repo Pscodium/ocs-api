@@ -44,7 +44,8 @@ module.exports = function Articles(sequelize) {
                 as: "Tags",
                 through: "article_tags",
                 foreignKey: "ArticleId",
-                timestamps: true
+                timestamps: true,
+                onDelete: 'CASCADE'
             });
         },
         charset: 'utf8mb4',
