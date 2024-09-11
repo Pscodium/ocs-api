@@ -1,11 +1,13 @@
 const { DataTypes } = require("sequelize");
 
 /**
- * @typedef Images
+ * @typedef Files
  * @type {object}
  * @property {string} id
  * @property {string} name
  * @property {string} url
+ * @property {string} type
+ * @property {boolean} private
  * @property {number} created_at
  * @property {number} updated_at
  */
@@ -16,8 +18,8 @@ const { DataTypes } = require("sequelize");
  * @param {import('sequelize')} Sequelize
  * @returns
  */
-module.exports = function Session(sequelize) {
-    const Images = sequelize.define("Images", {
+module.exports = function Files(sequelize) {
+    const Files = sequelize.define("Files", {
         id: {
             type: DataTypes.UUID,
             defaultValue: sequelize.Sequelize.UUIDV4,
@@ -30,16 +32,31 @@ module.exports = function Session(sequelize) {
         url: {
             type: DataTypes.TEXT,
             allowNull: false
+        },
+        type: {
+            type: DataTypes.STRING,
+            allowNull: false
+        },
+        private: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false
         }
     }, {
-        tableName: "Images",
+        tableName: "files",
         associate: function(models) {
-            Images.belongsTo(models.Users, {
+            Files.belongsTo(models.Users, {
                 onDelete: "cascade"
+            });
+            Files.belongsToMany(models.Folder, {
+                as: "Folder",
+                through: "file_folders",
+                foreignKey: "FileId",
+                timestamps: true,
+                onDelete: 'CASCADE'
             });
         }
     });
 
 
-    return Images;
+    return Files;
 };
