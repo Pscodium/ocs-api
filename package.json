@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon src/index.js",
-    "start": "nodemon src/index.js",
+    "dev": "nodemon --watch src --exec node src/index.js",
+    "start": "nodemon --watch src --exec node src/index.js",
     "build": "npm run load_initial",
     "lint": "eslint ./src --ext js",
     "tests": "npm run load_database && mocha ./test/**.test.js --timeout 180000 --exit",
