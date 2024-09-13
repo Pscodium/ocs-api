@@ -77,6 +77,7 @@ exports.deleteFile = async (req, res) => {
         };
 
         await s3.deleteObject(fileExists.name, `${folderExists.name}/`);
+        await folderExists.removeFile(fileExists);
         await fileExists.destroy();
         
         return res.sendStatus(200);
