@@ -176,13 +176,14 @@ class AuthService {
      * @param {import('express').NextFunction} next
      */
     async sessionOrJwt(req, res, next) {
-        const { authorization } = req.headers;
+        const { authorization, origin, cookie } = req.headers;
 
-        if (!authorization) {
+        console.log(`entra aqui `, authorization, origin, cookie)
+        if (!authorization && !cookie) {
             return res.sendStatus(401);
         }
 
-        const token = authorization.replace("Bearer", '').trim();
+        const token = cookie? cookie.replace("token=", "") : authorization.replace("Bearer", '').trim();
         const tokenLength = token.length;
 
         if (tokenLength <= 36) {

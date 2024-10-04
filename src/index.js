@@ -16,10 +16,10 @@ const app = express();
 
 function start() {
     try {
-        const allowedOrigins = [process.env.FRONTEND_ORIGIN];
+        const allowedOrigins = [process.env.FRONTEND_ORIGIN, process.env.ELECTRON_ORIGIN];
 
         const options = {
-            origin: String(allowedOrigins),
+            origin: allowedOrigins,
             credentials: true
         };
 
