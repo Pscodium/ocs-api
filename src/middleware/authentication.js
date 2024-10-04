@@ -176,9 +176,8 @@ class AuthService {
      * @param {import('express').NextFunction} next
      */
     async sessionOrJwt(req, res, next) {
-        const { authorization, origin, cookie } = req.headers;
+        const { authorization, cookie } = req.headers;
 
-        console.log(`entra aqui `, authorization, origin, cookie)
         if (!authorization && !cookie) {
             return res.sendStatus(401);
         }
