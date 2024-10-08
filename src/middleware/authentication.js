@@ -59,6 +59,7 @@ class AuthService {
     * @param {import('express').Response} res
     */
     async login(req, res) {
+        const { origin } = req.headers;
         const { password, email } = req.body;
         try {
 
@@ -87,20 +88,18 @@ class AuthService {
 
             const sessionExists = await db.Session.findOne({
                 where: {
-                    userId: user.id
+                    userId: user.id,
+                    origin
                 }
             });
 
             if (sessionExists) {
-                await db.Session.destroy({
-                    where: {
-                        userId: user.id
-                    }
-                });
+                await sessionExists.destroy()
                 const session = await db.Session.create({
                     expiration_date: moment().add(3, 'day').valueOf(),
                     jwt: null,
-                    UserId: user.id
+                    UserId: user.id,
+                    origin
                 });
 
                 const serialized = serialize('token', session.sessionId, {
@@ -117,9 +116,10 @@ class AuthService {
             }
 
             const newSession = await db.Session.create({
-                expiration_date: moment().add(3, 'day').valueOf(),
+                expiration_date: origin === process.env.ELECTRON_ORIGIN? moment().add(999, 'years').valueOf() : moment().add(3, 'day').valueOf(),
                 jwt: null,
-                UserId: user.id
+                UserId: user.id,
+                origin
             });
 
             const serialized = serialize('token', newSession.sessionId, {
@@ -144,10 +144,12 @@ class AuthService {
      * @param {import('express').Response} res
      */
     async sessionLogout(req, res) {
+        const { origin } = req.headers;
         try {
             const deletedSessions = await db.Session.destroy({
                 where: {
-                    userId: req.userId
+                    userId: req.userId,
+                    origin
                 }
             });
             if (deletedSessions > 0) {

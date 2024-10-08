@@ -29,6 +29,10 @@ module.exports = function Session(sequelize) {
         expiration_date: {
             type: DataTypes.DATE,
             allowNull: false
+        },
+        origin: {
+            type: DataTypes.STRING,
+            allowNull: true,
         }
     }, {
         tableName: "session",

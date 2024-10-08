@@ -14,8 +14,8 @@ exports.fileUpload = async (req, res) => {
         const s3 = new StorageInstance()
         const file = req.file;
         const { folderId } = req.params;
-        const filePattern = file.originalname.split('.');
-        const fileName = `${uuid.v4()}.${filePattern[filePattern.length - 1]}`;
+        // const filePattern = file.originalname.split('.');
+        // const fileName = `${uuid.v4()}.${filePattern[filePattern.length - 1]}`;
         const type = file.mimetype;
         const content = file.buffer;
 
@@ -33,14 +33,14 @@ exports.fileUpload = async (req, res) => {
             return res.status(400).json({ error: "Folder doesn't exists" })
         }
 
-        const fileUrl = await s3.uploadFile(fileName, content, `${folderExists.name}/`);
+        const fileUrl = await s3.uploadFile(file.originalname, content, `${folderExists.name}/`);
 
         if (!fileUrl) {
             return res.status(500).json({ error: "MINIO - Failed to upload"})
         }
 
         const uploaded = await db.Files.create({
-            name: fileName,
+            name: file.originalname,
             url: fileUrl,
             UserId: req.userId,
             type
