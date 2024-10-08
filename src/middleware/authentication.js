@@ -60,6 +60,7 @@ class AuthService {
     */
     async login(req, res) {
         const { origin } = req.headers;
+        console.log('aqui ', origin)
         const { password, email } = req.body;
         try {
 
