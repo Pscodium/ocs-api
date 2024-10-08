@@ -60,7 +60,6 @@ class AuthService {
     */
     async login(req, res) {
         const { origin } = req.headers;
-        console.log('aqui ', origin)
         const { password, email } = req.body;
         try {
 
@@ -117,10 +116,94 @@ class AuthService {
             }
 
             const newSession = await db.Session.create({
-                expiration_date: origin === process.env.ELECTRON_ORIGIN? moment().add(999, 'years').valueOf() : moment().add(3, 'day').valueOf(),
+                expiration_date: moment().add(3, 'day').valueOf(),
                 jwt: null,
                 UserId: user.id,
                 origin
+            });
+
+            const serialized = serialize('token', newSession.sessionId, {
+                expires: newSession.expiration_date,
+                domain: process.env.FRONTEND_DOMAIN,
+                secure: true,
+                sameSite: 'none',
+                path: '/'
+            });
+            res.set('Set-Cookie', serialized);
+
+            user.dataValues.token = newSession.sessionId;
+            return res.json(user);
+        } catch (err) {
+            return res.status(500).json({ Stack: `[AuthenticateError] - ${err}` });
+        }
+    }
+
+    /**
+    *
+    * @param {import('express').Request} req
+    * @param {import('express').Response} res
+    */
+    async unexpiredLogin(req, res) {
+        const { password, email } = req.body;
+        try {
+
+            const user = await db.Users.findOne({
+                where: { email: email },
+                attributes: {
+                    exclude: ['PermissionId']
+                },
+                include: {
+                    model: db.Permissions,
+                    attributes: {
+                        exclude: ['createdAt', 'updatedAt', 'id', 'UserId']
+                    }
+                }
+            });
+
+            if (!user) {
+                return res.status(404).json({ Stack: "[AuthenticationError] - E-mail does not exist." });
+            }
+
+            const validatePassword = await user.authenticate(password, user.password);
+            if (!validatePassword) {
+                return res.status(404).json({ success: false });
+            }
+            await lResCleaner(user.dataValues);
+
+            const sessionExists = await db.Session.findOne({
+                where: {
+                    userId: user.id,
+                    origin: process.env.ELECTRON_ORIGIN
+                }
+            });
+
+            if (sessionExists) {
+                await sessionExists.destroy()
+                const session = await db.Session.create({
+                    expiration_date: moment().add(3, 'day').valueOf(),
+                    jwt: null,
+                    UserId: user.id,
+                    origin: process.env.ELECTRON_ORIGIN
+                });
+
+                const serialized = serialize('token', session.sessionId, {
+                    expires: session.expiration_date,
+                    domain: process.env.FRONTEND_DOMAIN,
+                    secure: true,
+                    sameSite: 'none',
+                    path: '/'
+                });
+                res.set('Set-Cookie', serialized);
+
+                user.dataValues.token = session.sessionId;
+                return res.json(user);
+            }
+
+            const newSession = await db.Session.create({
+                expiration_date: moment().add(999, 'years').valueOf(),
+                jwt: null,
+                UserId: user.id,
+                origin: process.env.ELECTRON_ORIGIN
             });
 
             const serialized = serialize('token', newSession.sessionId, {

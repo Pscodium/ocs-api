@@ -9,6 +9,7 @@ const enums = require("../database/enums/index");
 exports.init = function(app, auth) {
     app.post('/register', auth.register);
     app.post('/login', auth.login);
+    app.post('/electron/login', auth.unexpiredLogin);
     app.get('/check/auth', auth.sessionOrJwt, auth.check);
     app.get('/logout', auth.sessionOrJwt, auth.sessionLogout);
     app.get('/data/user', auth.sessionOrJwt, users.getUserData);
