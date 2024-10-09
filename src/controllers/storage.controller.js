@@ -56,6 +56,33 @@ exports.fileUpload = async (req, res) => {
     }
 }
 
+exports.proxy = async (req, res) => {
+    const { url } = req.query;
+    if (!url) {
+        return res.status(400).send('URL é necessária');
+    }
+    
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Origin': 'http://localhost',
+            },
+        });
+        
+        if (!response.ok) {
+            return res.status(response.status).send('Erro ao buscar a imagem');
+        }
+
+        const data = await response.text();
+        res.set('Content-Type', response.headers.get('content-type'));
+        res.send(data);
+    } catch (error) {
+        console.error('Erro ao buscar a imagem:', error);
+        res.status(500).send('Erro ao buscar a imagem');
+    }
+}
+
 exports.deleteFile = async (req, res) => {
     try {
         const { id, folderId } = req.params;
