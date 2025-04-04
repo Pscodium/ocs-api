@@ -374,9 +374,14 @@ class AuthService {
     }
 
     async loggedOrNot(req, res, next) {
-        const { authorization } = req.headers;
+        const { authorization, cookie } = req.headers;
 
-        const token = authorization.replace("Bearer", '').trim();
+        if (!authorization && !cookie) {
+            req.user = undefined;
+            return next();
+        }
+
+        const token = cookie? cookie.replace("token=", "") : authorization.replace("Bearer", '').trim();
         if (!token) {
             req.user = undefined;
             return next();
@@ -408,6 +413,8 @@ class AuthService {
                 }
             });
             if (!user) {
+                req.user = undefined;
+                next();
                 throw new Error("User not found");
             }
 

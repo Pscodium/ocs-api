@@ -1,6 +1,4 @@
 const db = require('../config/sequelize');
-const uuid = require('uuid');
-const randomColor = require('randomcolor');
 const { StorageInstance } = require('../services/aws/s3');
 
 /**
@@ -36,7 +34,7 @@ exports.fileUpload = async (req, res) => {
         const fileUrl = await s3.uploadFile(file.originalname, content, `${folderExists.name}/`);
 
         if (!fileUrl) {
-            return res.status(500).json({ error: "MINIO - Failed to upload"})
+            return res.status(500).json({ error: "MINIO - Failed to upload" })
         }
 
         const uploaded = await db.Files.create({
@@ -61,7 +59,7 @@ exports.proxy = async (req, res) => {
     if (!url) {
         return res.status(400).send('URL é necessária');
     }
-    
+
     try {
         const response = await fetch(url, {
             method: 'GET',
@@ -69,7 +67,7 @@ exports.proxy = async (req, res) => {
                 'Origin': 'http://localhost',
             },
         });
-        
+
         if (!response.ok) {
             return res.status(response.status).send('Erro ao buscar a imagem');
         }
@@ -106,7 +104,7 @@ exports.deleteFile = async (req, res) => {
         await s3.deleteObject(fileExists.name, `${folderExists.name}/`);
         await folderExists.removeFile(fileExists);
         await fileExists.destroy();
-        
+
         return res.sendStatus(200);
     } catch (err) {
         console.error(err);
@@ -137,19 +135,33 @@ exports.getFiles = async (req, res) => {
 
 exports.getFolders = async (req, res) => {
     try {
+        const { userId } = req;
+
+        const whereCondition = userId 
+            ? {
+                [db.sequelize.Sequelize.Op.or]: [
+                    { private: false },
+                    { UserId: userId } 
+                ]
+            } 
+            : { 
+                private: false  // Apenas itens públicos quando não está logado
+            };
+
         const folders = await db.Folder.findAll({
             include: [{
                 model: db.Files,
                 as: 'Files',
                 order: [['createdAt', 'DESC']],
             }],
+            where: whereCondition,
             attributes: {
                 include: [
                     [db.sequelize.literal('(SELECT COUNT(*) FROM `file_folders` WHERE `file_folders`.`FolderId` = `Folder`.`id`)'), 'filesCount']
                 ]
             },
             order: [['createdAt', 'DESC']],
-        })
+        });
 
         if (!folders.length) {
             return res.status(200).json([])
@@ -164,7 +176,7 @@ exports.getFolders = async (req, res) => {
 
 exports.createFolder = async (req, res) => {
     try {
-        const { folderName, type } = req.body;
+        const { folderName, type, private, hex } = req.body;
         const s3 = new StorageInstance()
         const validFolderName = `${folderName}/`;
 
@@ -177,7 +189,8 @@ exports.createFolder = async (req, res) => {
         const folder = await db.Folder.create({
             name: folderName,
             UserId: req.userId,
-            hex: randomColor(),
+            private,
+            hex,
             type
         })
 
