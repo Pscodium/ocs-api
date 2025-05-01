@@ -17,7 +17,50 @@ class StorageInstance {
     }
 
     /**
-     *
+     * Upload file with progress tracking
+     * @param {string} fileName - Nome do arquivo
+     * @param {string | Buffer} content - Conteúdo/Buffer do arquivo
+     * @param {string} folderName - Caminho da pasta
+     * @param {function} progressCallback - Callback for progress updates (0-100)
+     */
+    async uploadFileWithProgress(fileName, content, folderName = '', progressCallback) {
+        try {
+            const upload = this.client.upload({
+                Bucket: CONFIG.providers.storage.bucket,
+                Key: `${folderName}${fileName}`,
+                Body: content,
+            });
+
+            let lastReportedProgress = -1;
+
+            if (typeof progressCallback === 'function') {
+                upload.on('httpUploadProgress', (progress) => {
+                    if (progress.total) {
+                        const currentProgress = Math.round((progress.loaded * 100) / progress.total);
+                        
+                        if (currentProgress !== lastReportedProgress) {
+                            progressCallback(currentProgress);
+                            lastReportedProgress = currentProgress;
+                        }
+                    }
+                });
+            }
+
+            const result = await upload.promise();
+            
+            if (lastReportedProgress < 100 && typeof progressCallback === 'function') {
+                progressCallback(100);
+            }
+            
+            return result.Location;
+        } catch (err) {
+            console.error(err);
+            return null;
+        }
+    }
+
+    /**
+     * Original upload file method (kept for backward compatibility)
      * @param {string} fileName - Nome do arquivo
      * @param {string | Buffer} content - Conteúdo/Buffer do arquivo
      */
@@ -35,7 +78,7 @@ class StorageInstance {
     }
 
     /**
-     *
+     * Delete an object from S3
      * @param {string} objectName - Nome do objeto/arquivo
      * @param {string} [folderName] - (Opcional) Caminho da pasta onde o arquivo está localizado
      */
@@ -76,7 +119,6 @@ class StorageInstance {
      */
     async deleteFolder(folderName) {
         try {
-
             const listedObjects = await this.client.listObjectsV2({
                 Bucket: CONFIG.providers.storage.bucket,
                 Prefix: folderName
@@ -106,8 +148,6 @@ class StorageInstance {
             throw err;
         }
     }
-
-
 }
 
 exports.StorageInstance = StorageInstance;

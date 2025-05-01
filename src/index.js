@@ -5,6 +5,8 @@ const express = require('express');
 const { Router } = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const http = require('http');
+const { Server } = require('socket.io');
 
 const routeInitialization = require('./routes/config');
 const logger = require('./services/logs.service');
@@ -13,6 +15,15 @@ const authentication = require('./middleware/authentication');
 const cookieParser = require('cookie-parser');
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+    cors: {
+        origin: [process.env.FRONTEND_ORIGIN, process.env.ELECTRON_ORIGIN],
+        credentials: true
+    }
+});
+
+app.set('io', io);
 
 function start() {
     try {
@@ -32,11 +43,24 @@ function start() {
         app.use(!disabled_logs ? logs : null);
         app.use(routes);
 
-        app.listen(process.env.API_PORT);
+        io.on('connection', (socket) => {
+            if (!disabled_logs) {
+                console.log(logger.success(`Socket connected: ${socket.id}`));
+            }
+            
+            socket.on('disconnect', () => {
+                if (!disabled_logs) {
+                    console.log(logger.warning(`Socket disconnected: ${socket.id}`));
+                }
+            });
+        });
 
-        if (!disabled_logs) {
-            console.log(logger.success("Connection established!"));
-        }
+        server.listen(process.env.API_PORT, () => {
+            if (!disabled_logs) {
+                console.log(logger.success("Connection established!"));
+                console.log(logger.available(`Server running on port ${process.env.API_PORT}`));
+            }
+        });
     } catch (err) {
         console.error(`[Server Error] - ${err.message}`);
     }
