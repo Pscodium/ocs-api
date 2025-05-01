@@ -11,7 +11,7 @@ const upload = multer({ storage: memoryStorage });
  * @param {import('../middleware/authentication')} auth
  */
 exports.init = function(app, auth) {
-    app.post('/storage/upload/:folderId', auth.sessionOrJwt, auth.hasPermissions([enums.Permissions.MASTER_ADMIN_LEVEL]), upload.single('media'), storage.fileUpload)
+    app.post('/storage/upload/:folderId', auth.sessionOrJwt, auth.hasPermissions([enums.Permissions.MASTER_ADMIN_LEVEL]), upload.array('media', 50), storage.fileUpload)
     app.delete('/storage/delete/:id/folder/:folderId', auth.sessionOrJwt, auth.hasPermissions([enums.Permissions.MASTER_ADMIN_LEVEL]), storage.deleteFile);
     app.post('/storage/folders/create', auth.sessionOrJwt, auth.hasPermissions([enums.Permissions.MASTER_ADMIN_LEVEL]), storage.createFolder);
     app.delete('/storage/folders/delete/:id', auth.sessionOrJwt, auth.hasPermissions([enums.Permissions.MASTER_ADMIN_LEVEL]), storage.deleteFolder);
