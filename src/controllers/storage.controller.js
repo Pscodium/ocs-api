@@ -12,6 +12,7 @@ exports.fileUpload = async (req, res) => {
         const s3 = new StorageInstance();
         const files = req.files;
         const { folderId } = req.params;
+        const fileIds = req.body.fileIds ? JSON.parse(req.body.fileIds) : [];
 
         const io = req.app.get('io');
         
@@ -40,11 +41,13 @@ exports.fileUpload = async (req, res) => {
 
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
-            const fileId = `${sessionId}-${i}`;
+            const fileId = fileIds[i] || `${sessionId}-${i}`;
+            
+            const fileName = file.originalname;
             
             io.emit(`upload-progress-${req.userId}`, {
                 fileId,
-                fileName: file.originalname,
+                fileName,
                 progress: 0,
                 index: i,
                 total: totalFiles
@@ -56,7 +59,7 @@ exports.fileUpload = async (req, res) => {
                 if (progress - lastProgress >= 1) {
                     io.emit(`upload-progress-${req.userId}`, {
                         fileId,
-                        fileName: file.originalname,
+                        fileName,
                         progress,
                         index: i,
                         total: totalFiles
@@ -65,8 +68,29 @@ exports.fileUpload = async (req, res) => {
                 }
             };
             
+            const existingFile = await db.Files.findOne({
+                where: {
+                    name: fileName
+                },
+                include: [{
+                    model: db.Folder,
+                    where: { id: folderId },
+                    as: 'Folder',
+                    required: true
+                }]
+            });
+            
+            let finalFileName = fileName;
+            if (existingFile) {
+                const nameParts = fileName.split('.');
+                const extension = nameParts.pop();
+                const baseName = nameParts.join('.');
+
+                finalFileName = `${baseName} (${Date.now()}).${extension}`;
+            }
+            
             const fileUrl = await s3.uploadFileWithProgress(
-                file.originalname, 
+                finalFileName, 
                 file.buffer, 
                 `${folderExists.name}/`,
                 progressTracker
@@ -75,7 +99,7 @@ exports.fileUpload = async (req, res) => {
             if (!fileUrl) {
                 io.emit(`upload-error-${req.userId}`, {
                     fileId,
-                    fileName: file.originalname,
+                    fileName,
                     error: "Failed to upload to S3",
                     index: i
                 });
@@ -84,7 +108,7 @@ exports.fileUpload = async (req, res) => {
             }
 
             const uploaded = await db.Files.create({
-                name: file.originalname,
+                name: finalFileName,
                 url: fileUrl,
                 UserId: req.userId,
                 type: file.mimetype
@@ -95,7 +119,7 @@ exports.fileUpload = async (req, res) => {
             if (lastProgress < 100) {
                 io.emit(`upload-progress-${req.userId}`, {
                     fileId,
-                    fileName: file.originalname,
+                    fileName,
                     progress: 100,
                     index: i,
                     total: totalFiles
@@ -106,7 +130,7 @@ exports.fileUpload = async (req, res) => {
             
             io.emit(`upload-complete-${req.userId}`, {
                 fileId,
-                fileName: file.originalname,
+                fileName,
                 fileData: uploaded,
                 index: i,
                 total: totalFiles
@@ -208,7 +232,7 @@ exports.deleteFile = async (req, res) => {
 
 exports.deleteMultipleFiles = async (req, res) => {
     try {
-        const { fileIds, folderId } = req.body;
+        const { fileIds, folderId, deleteIds } = req.body;
         const s3 = new StorageInstance();
         
         const io = req.app.get('io');
@@ -244,7 +268,7 @@ exports.deleteMultipleFiles = async (req, res) => {
         
         for (let i = 0; i < fileIds.length; i++) {
             const fileId = fileIds[i];
-            const deleteId = `${sessionId}-${i}`;
+            const deleteId = (deleteIds && deleteIds[i]) ? deleteIds[i] : `${sessionId}-${i}`;
             
             io.emit(`delete-progress-${req.userId}`, {
                 deleteId,
