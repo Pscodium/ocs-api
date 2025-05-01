@@ -13,6 +13,7 @@ const upload = multer({ storage: memoryStorage });
 exports.init = function(app, auth) {
     app.post('/storage/upload/:folderId', auth.sessionOrJwt, auth.hasPermissions([enums.Permissions.MASTER_ADMIN_LEVEL]), upload.array('media', 50), storage.fileUpload)
     app.delete('/storage/delete/:id/folder/:folderId', auth.sessionOrJwt, auth.hasPermissions([enums.Permissions.MASTER_ADMIN_LEVEL]), storage.deleteFile);
+    app.post('/storage/delete/bulk', auth.sessionOrJwt, auth.hasPermissions([enums.Permissions.MASTER_ADMIN_LEVEL]), storage.deleteMultipleFiles);
     app.post('/storage/folders/create', auth.sessionOrJwt, auth.hasPermissions([enums.Permissions.MASTER_ADMIN_LEVEL]), storage.createFolder);
     app.delete('/storage/folders/delete/:id', auth.sessionOrJwt, auth.hasPermissions([enums.Permissions.MASTER_ADMIN_LEVEL]), storage.deleteFolder);
     app.get('/proxy', storage.proxy)

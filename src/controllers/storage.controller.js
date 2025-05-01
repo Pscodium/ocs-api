@@ -206,6 +206,154 @@ exports.deleteFile = async (req, res) => {
     }
 }
 
+exports.deleteMultipleFiles = async (req, res) => {
+    try {
+        const { fileIds, folderId } = req.body;
+        const s3 = new StorageInstance();
+        
+        const io = req.app.get('io');
+        
+        if (!fileIds || !Array.isArray(fileIds) || fileIds.length === 0 || !folderId) {
+            return res.status(400).json({ error: "Invalid request body" });
+        }
+
+        const folderExists = await db.Folder.findOne({
+            where: {
+                id: folderId
+            },
+            include: [{
+                model: db.Files,
+                as: 'Files'
+            }]
+        });
+
+        if (!folderExists) {
+            return res.status(404).json({ error: "Folder not found" });
+        }
+
+        const deletedFiles = [];
+        const totalFiles = fileIds.length;
+        
+        const sessionId = Date.now();
+        
+        io.emit(`delete-start-${req.userId}`, {
+            sessionId,
+            total: totalFiles,
+            folderId
+        });
+        
+        for (let i = 0; i < fileIds.length; i++) {
+            const fileId = fileIds[i];
+            const deleteId = `${sessionId}-${i}`;
+            
+            io.emit(`delete-progress-${req.userId}`, {
+                deleteId,
+                fileId,
+                progress: 0,
+                index: i,
+                total: totalFiles
+            });
+            
+            try {
+                const fileExists = await db.Files.findOne({
+                    where: {
+                        id: fileId
+                    }
+                });
+    
+                if (!fileExists) {
+                    io.emit(`delete-error-${req.userId}`, {
+                        deleteId,
+                        fileId,
+                        error: "File not found",
+                        index: i
+                    });
+                    continue;
+                }
+                
+                io.emit(`delete-progress-${req.userId}`, {
+                    deleteId,
+                    fileId,
+                    fileName: fileExists.name,
+                    progress: 50,
+                    index: i,
+                    total: totalFiles
+                });
+                
+                await s3.deleteObject(fileExists.name, `${folderExists.name}/`);
+                
+                await folderExists.removeFile(fileExists);
+                
+                await fileExists.destroy();
+                
+                io.emit(`delete-progress-${req.userId}`, {
+                    deleteId,
+                    fileId,
+                    fileName: fileExists.name,
+                    progress: 100,
+                    index: i,
+                    total: totalFiles
+                });
+                
+                await new Promise(resolve => setTimeout(resolve, 50));
+                
+                io.emit(`delete-complete-${req.userId}`, {
+                    deleteId,
+                    fileId,
+                    fileName: fileExists.name,
+                    index: i,
+                    total: totalFiles
+                });
+                
+                deletedFiles.push(fileId);
+                
+            } catch (err) {
+                console.error(`Error deleting file ${fileId}:`, err);
+                io.emit(`delete-error-${req.userId}`, {
+                    deleteId,
+                    fileId,
+                    error: err.message || "Failed to delete file",
+                    index: i
+                });
+            }
+        }
+        
+        await folderExists.save();
+        
+        const updatedFolder = await db.Folder.findOne({
+            where: { id: folderId },
+            include: [{
+                model: db.Files,
+                as: 'Files'
+            }]
+        });
+        
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        io.emit(`delete-all-complete-${req.userId}`, {
+            sessionId,
+            folderId,
+            folderData: updatedFolder,
+            totalFiles: deletedFiles.length,
+            deletedFiles
+        });
+
+        return res.status(200).json({ 
+            success: true, 
+            deletedCount: deletedFiles.length,
+            deletedFiles
+        });
+    } catch (err) {
+        console.error(err);
+        const io = req.app.get('io');
+        io.emit(`delete-error-${req.userId}`, {
+            error: 'Operation Failed',
+            message: err.message
+        });
+        
+        return res.status(500).json({ error: 'Delete operation failed' });
+    }
+}
 
 exports.getFiles = async (req, res) => {
     try {
