@@ -45,6 +45,11 @@ module.exports = function Users(sequelize) {
             type: DataTypes.STRING,
             allowNull: true
         },
+        size_limit: {
+            type: DataTypes.INTEGER,
+            defaultValue: 80, // 80 mB
+            allowNull: true
+        },
         role: {
             type: DataTypes.ENUM(ENUMS.values(ENUMS.UserRoles)),
             defaultValue: ENUMS.UserRoles.DEFAULT,

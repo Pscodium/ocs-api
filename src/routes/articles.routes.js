@@ -7,11 +7,11 @@ const enums = require("../database/enums/index");
  * @param {import('../middleware/authentication')} auth
  */
 exports.init = function(app, auth) {
-    app.post('/article/create', auth.sessionOrJwt, auth.hasPermissions([enums.Permissions.MASTER_ADMIN_LEVEL, enums.Permissions.CAN_POST]), articles.create);
+    app.post('/article/create', auth.sessionOrJwt, auth.hasPermissions([enums.Permissions.MASTER_ADMIN_LEVEL, enums.Permissions.CAN_UPLOAD_FILES]), articles.create);
     app.get('/list/articles/:tagId', articles.getArticlesByTagId);
     app.get('/list-all/articles', articles.getAllArticles);
     app.get('/list-all/tags', articles.getAllTags);
-    app.put('/article/update/:id', auth.sessionOrJwt, auth.hasPermissions([enums.Permissions.MASTER_ADMIN_LEVEL, enums.Permissions.CAN_POST]), articles.updateArticle)
-    app.delete('/article/delete/:id', auth.sessionOrJwt, auth.hasPermissions([enums.Permissions.MASTER_ADMIN_LEVEL, enums.Permissions.CAN_POST]), articles.deleteArticle)
-    app.delete('/tag/delete/:id', auth.sessionOrJwt, auth.hasPermissions([enums.Permissions.MASTER_ADMIN_LEVEL, enums.Permissions.CAN_POST]), articles.deleteTag)
+    app.put('/article/update/:id', auth.sessionOrJwt, auth.hasPermissions([enums.Permissions.MASTER_ADMIN_LEVEL, enums.Permissions.CAN_UPLOAD_FILES]), articles.updateArticle)
+    app.delete('/article/delete/:id', auth.sessionOrJwt, auth.hasPermissions([enums.Permissions.MASTER_ADMIN_LEVEL, enums.Permissions.CAN_UPLOAD_FILES]), articles.deleteArticle)
+    app.delete('/tag/delete/:id', auth.sessionOrJwt, auth.hasPermissions([enums.Permissions.MASTER_ADMIN_LEVEL, enums.Permissions.CAN_UPLOAD_FILES]), articles.deleteTag)
 };

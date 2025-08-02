@@ -15,9 +15,10 @@ exports.init = function(app, auth) {
     app.get('/logout', auth.sessionOrJwt, auth.sessionLogout);
     app.get('/data/user', auth.sessionOrJwt, users.getUserData);
     app.get('/users', auth.sessionOrJwt, users.getUsers);
+    app.get('/settings/user', auth.sessionOrJwt, auth.hasPermissions([enums.Permissions.CAN_MANAGE_SETTINGS]), users.getUserSettings);
     app.get('/user/:id', auth.sessionOrJwt, users.getUserById);
     app.get('/user/profile/:nickname', users.getUserByNickname);
     app.delete('/user/:id', auth.sessionOrJwt, users.deleteUser);
     app.put('/user/update', auth.sessionOrJwt, users.userUpdateAccountInfo);
-    app.put('/user/update/:id', auth.sessionOrJwt, auth.hasPermissions([enums.Permissions.MANAGE_USERS, enums.Permissions.CAN_MANAGE_ROLES]), users.updateUserById);
+    app.put('/user/update/:id', auth.sessionOrJwt, auth.hasPermissions([enums.Permissions.CAN_EDIT_USER]), users.updateUserById);
 };

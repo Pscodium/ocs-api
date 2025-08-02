@@ -199,3 +199,42 @@ exports.deleteUser = async (req, res) => {
         return res.status(500).json({ success: false });
     }
 };
+
+exports.getUserSettings = async (req, res) => {
+    try {
+        const { user } = req;
+        const query = req.query;
+        const page = query.page || 1;
+        const maxResults = query.limit || 10;
+        let includePerm = {
+            model: db.Permissions,
+            attributes: {
+                exclude: ['id', 'UserId']
+            }
+        };
+        let queryObj = {
+            include: [
+                includePerm
+            ],
+            attributes: {
+                exclude: ['password', 'PermissionId']
+            }
+        };
+
+        if (page) {
+            const offset = (page - 1) * maxResults;
+
+            queryObj.limit = maxResults;
+            queryObj.offset = offset;
+        }
+
+        const users = await db.Users.findAndCountAll(queryObj);
+        if (!users) {
+            return res.status(404).json({ success: false });
+        }
+        return res.status(200).json({ settings: { max_size: user.size_limit }, users: users.rows, page: Number(page) || 1, pages: Math.ceil(users.count / maxResults), total: users.count });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ success: false });
+    }
+}

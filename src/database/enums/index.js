@@ -15,20 +15,12 @@ const ENUMS = {
     Permissions: {
         // admin perms
         "MASTER_ADMIN_LEVEL": 'master_admin_level',
-        "CAN_MANAGE_ROLES": 'can_manage_roles',
         "CAN_EDIT_USER": 'can_edit_user',
-        "CAN_EDIT_POST_FROM_ANOTHER_USER": 'can_edit_post_from_another_user',
-
-        // thread perms
-        "CAN_POST": 'can_post',
-        "CAN_LIKE_ON_POST": 'can_like_on_post',
-        "CAN_COMMENT_ON_POST": 'can_comment_on_post',
-        "CAN_EDIT_POST": 'can_edit_post',
+        "CAN_DELETE_USER": 'can_delete_user',
+        "CAN_UPLOAD_FILES": 'can_upload_files',
 
         // settings perms
-        "CAN_EDIT_PROFILE": 'can_edit_profile',
-        "CAN_EDIT_PHOTO": 'can_edit_photo',
-        "CAN_REMOVE_ACCOUNT": 'can_remove_account'
+        "CAN_MANAGE_SETTINGS": 'can_manage_settings'
     },
     Threads: {
         Reactions: {
