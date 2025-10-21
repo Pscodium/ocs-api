@@ -180,7 +180,7 @@ class AuthService {
             if (sessionExists) {
                 await sessionExists.destroy()
                 const session = await db.Session.create({
-                    expiration_date: moment().add(3, 'day').valueOf(),
+                    expiration_date: moment().add(999, 'day').valueOf(),
                     jwt: null,
                     UserId: user.id,
                     origin: process.env.ELECTRON_ORIGIN
