@@ -3,45 +3,51 @@ const randomColor = require('randomcolor');
 
 exports.create = async (req, res) => {
     try {
-        const { title, body, tags } = req.body;
+        const { title, content, hex } = req.body;
+        const { categoryId, subCategoryId } = req.params;
+        let subCategory = null;
+
+        console.log('aqui ', categoryId, subCategoryId);
+
+        if (!title || !content) {
+            return res.status(400).json({ message: "Title and content are required" });
+        }
+
+        if (!categoryId) {
+            return res.status(400).json({ message: "Category ID is required" });
+        }
+
+        const category = await db.Category.findOne({
+            where: { id: categoryId }
+        });
+
+        if (!category) {
+            return res.status(404).json({ message: "Category not found" });
+        }
+
+        if (subCategoryId) {
+            subCategory = await db.SubCategory.findOne({
+                where: { id: subCategoryId }
+            });
+
+            if (!subCategory) {
+                return res.status(404).json({ message: "Sub-category not found" });
+            }
+        }
 
         const article = await db.Articles.create({
             title,
-            body,
+            content,
+            hex,
             UserId: req.userId
         });
 
-        if (tags) {
-            for (let i = 0; i < tags.length; i++) {
-                if (!tags[i].title) {
-                    return;
-                }
-                const tagExists = await db.Tags.findOne({
-                    where: db.sequelize.where(
-                        db.sequelize.fn("LOWER", db.sequelize.col('title')),
-                        db.sequelize.fn("LOWER", tags[i].title)
-                    )
-                });
-                if (tagExists) {
-                    const tag = await db.Tags.findOne({
-                        where: db.sequelize.where(
-                            db.sequelize.fn("LOWER", db.sequelize.col('title')),
-                            db.sequelize.fn("LOWER", tags[i].title)
-                        )
-                    });
-                    tag.count += 1;
-                    await tag.save();
-                    await tag.addArticle(article);
-                } else {
-                    const tag = await db.Tags.create({
-                        title: tags[i].title,
-                        hex: randomColor(),
-                        count: db.sequelize.literal('count + 1')
-                    });
-                    await tag.addArticle(article);
-                }
-            }
-        }
+        await db.ArticleCategory.create({
+            article_id: article.id,
+            category_id: category.id,
+            sub_category_id: subCategory ? subCategory.id : null
+        });
+        
 
         return res.status(200).json(article);
     } catch (e) {
@@ -50,48 +56,84 @@ exports.create = async (req, res) => {
     }
 }
 
-exports.getArticlesByTagId = async (req, res) => {
+exports.createCategory = async (req, res) => {
     try {
-        const { tagId } = req.params;
+        const { title, hex } = req.body;
 
-        const articles = await db.Articles.findAll({
-            include: [
-                {
-                    model: db.Tags,
-                    as: "Tags",
-                    through: {
-                        attributes: []
-                    },
-                    where: {
-                        id: tagId
-                    }
-                }
-            ],
-            order: [['title', 'ASC']],
-        });
+        if (!title) {
+            return res.status(400).json({ message: "Category title is required" });
+        }
 
-        return res.status(200).json(articles);
+        const category = await db.Category.create({ title, hex: hex || randomColor() });
+        return res.status(201).json(category);
     } catch (e) {
         console.error(e);
         return res.sendStatus(500);
     }
 }
 
-exports.getAllArticles = async (req, res) => {
+exports.createSubCategory = async (req, res) => {
     try {
-        const articles = await db.Articles.findAll({
+        const { title, hex } = req.body;
+        const { categoryId } = req.params;
+
+        if (!title) {
+            return res.status(400).json({ message: "Sub-category title is required" });
+        }
+        if (!categoryId) {
+            return res.status(400).json({ message: "Category ID is required" });
+        }
+
+        const category = await db.Category.findOne({
+            where: { id: categoryId }
+        });
+
+        if (!category) {
+            return res.status(404).json({ message: "Category not found" });
+        }
+
+        const subCategory = await db.SubCategory.create({ title, hex: hex || randomColor(), category_id: category.id });
+        return res.status(201).json(subCategory);
+    } catch (e) {
+        console.error(e);
+        return res.sendStatus(500);
+    }
+}
+
+exports.getAllCategories = async (req, res) => {
+    try {
+        const categories = await db.Category.findAll({
+            attributes: ['id', 'title', 'hex'],
             include: [
                 {
-                    model: db.Tags,
-                    as: "Tags",
-                    through: {
-                        attributes: []
-                    }
+                    model: db.SubCategory,
+                    as: 'subCategories',
+                    attributes: ['id', 'title', 'hex'],
+                    include: [
+                        {
+                            model: db.Articles,
+                            as: 'articles',
+                            attributes: ['id', 'title', 'content', 'hex', 'files'],
+                            through: { attributes: [] }
+                        }
+                    ]
+                },
+                {
+                    model: db.Articles,
+                    as: 'articles',
+                    attributes: ['id', 'title', 'content', 'hex', 'files'],
+                    // somente artigos diretamente vinculados à category (sem sub_category)
+                    through: { attributes: [], where: { sub_category_id: null } }
                 }
             ],
-            order: [['title', 'ASC']],
+            order: [
+                ['title', 'ASC'],
+                [{ model: db.SubCategory, as: 'subCategories' }, 'title', 'ASC'],
+                [{ model: db.SubCategory, as: 'subCategories' }, { model: db.Articles, as: 'articles' }, 'title', 'ASC']
+            ]
         });
-        return res.status(200).json(articles);
+
+        return res.status(200).json(categories);
     } catch (e) {
         console.error(e);
         return res.sendStatus(500);
@@ -100,21 +142,17 @@ exports.getAllArticles = async (req, res) => {
 
 exports.updateArticle = async (req, res) => {
     try {
-        const { id } = req.params;
-        
-        const articleExists = await db.Articles.findOne({
-            where: { id }
-        });
-        
-        if (!articleExists) {
-            return res.status(404).json({ message: "Article not found" })
+        const { articleId } = req.params;
+        const { title, content, hex, files } = req.body;
+
+        const article = await db.Articles.findOne({ where: { id: articleId } });
+
+        if (!article) {
+            return res.status(404).json({ message: "Article not found" });
         }
 
-        await db.Articles.update(req.body, {
-            where: { id }
-        });
-
-        return res.sendStatus(200);
+        await article.update({ title, content, hex, files });
+        return res.status(200).json(article);
     } catch (e) {
         console.error(e);
         return res.sendStatus(500);
@@ -123,78 +161,104 @@ exports.updateArticle = async (req, res) => {
 
 exports.deleteArticle = async (req, res) => {
     try {
-        const { id } = req.params;
-        
-        const articleExists = await db.Articles.findOne({
-            where: { id },
-            include: [
-                {
-                    model: db.Tags,
-                    as: "Tags"
-                }
-            ]
-        });
-
-        if (!articleExists) {
-            return res.status(404).json({ message: "Article not found" })
+        const { articleId } = req.params;
+        const article = await db.Articles.findOne({ where: { id: articleId } });
+        if (!article) {
+            return res.status(404).json({ message: "Article not found" });
         }
 
-        await articleExists.setTags([]);
-        await articleExists.destroy();
-
-        return res.sendStatus(200);
+        await article.destroy();
+        return res.sendStatus(204);
     } catch (e) {
         console.error(e);
         return res.sendStatus(500);
     }
 }
 
-exports.deleteTag = async (req, res) => {
+exports.deleteCategory = async (req, res) => {
+    const transaction = await db.sequelize.transaction();
     try {
-        const { id } = req.params;
-        
-        const tagExists = await db.Tags.findOne({
-            where: { id },
-        })
+        const { categoryId } = req.params;
 
-        if (!tagExists) {
-            return res.status(404).json({ message: "Tag not found" })
+        const category = await db.Category.findOne({ where: { id: categoryId }, transaction });
+        if (!category) {
+            await transaction.rollback();
+            return res.status(404).json({ message: "Category not found" });
         }
 
-        await tagExists.setArticles([]);
-        await tagExists.destroy();
+        const subCategories = await db.SubCategory.findAll({ where: { category_id: categoryId }, transaction });
 
-        return res.sendStatus(200);
+        for (const sc of subCategories) {
+            const mappings = await db.ArticleCategory.findAll({ where: { sub_category_id: sc.id }, attributes: ['article_id'], transaction });
+            const articleIds = [...new Set(mappings.map(m => m.article_id))];
+
+            await db.ArticleCategory.destroy({ where: { sub_category_id: sc.id }, transaction });
+
+            for (const articleId of articleIds) {
+                const remaining = await db.ArticleCategory.count({ where: { article_id: articleId }, transaction });
+                if (remaining === 0) {
+                    await db.Articles.destroy({ where: { id: articleId }, transaction });
+                }
+            }
+        }
+
+        const directMappings = await db.ArticleCategory.findAll({ where: { category_id: categoryId, sub_category_id: null }, attributes: ['article_id'], transaction });
+        const directArticleIds = [...new Set(directMappings.map(m => m.article_id))];
+
+        await db.ArticleCategory.destroy({ where: { category_id: categoryId, sub_category_id: null }, transaction });
+
+        for (const articleId of directArticleIds) {
+            const remaining = await db.ArticleCategory.count({ where: { article_id: articleId }, transaction });
+            if (remaining === 0) {
+                await db.Articles.destroy({ where: { id: articleId }, transaction });
+            }
+        }
+
+        await db.SubCategory.destroy({ where: { category_id: categoryId }, transaction });
+
+        await db.ArticleCategory.destroy({ where: { category_id: categoryId }, transaction });
+
+        await category.destroy({ transaction });
+
+        await transaction.commit();
+        return res.sendStatus(204);
     } catch (e) {
         console.error(e);
+        try { await transaction.rollback(); } catch (er) { console.error(er); }
         return res.sendStatus(500);
     }
 }
 
-exports.getAllTags = async (req, res) => {
+exports.deleteSubCategory = async (req, res) => {
+    const transaction = await db.sequelize.transaction();
     try {
-        const tags = await db.Tags.findAll({
-            include: [
-                {
-                    model: db.Articles,
-                    as: "Articles",
-                    through: {
-                        attributes: []
-                    }
-                }
-            ],
-            attributes: {
-                include: [
-                    [db.sequelize.literal('(SELECT COUNT(*) FROM `article_tags` WHERE `article_tags`.`TagId` = `Tags`.`id`)'), 'articlesCount']
-                ]
-            },
-            group: ['Tags.id', 'Articles.id'],
-            order: [['title', 'ASC']],
-        })
+        const { subCategoryId } = req.params;
 
-        return res.status(200).json(tags);
+        const subCategory = await db.SubCategory.findOne({ where: { id: subCategoryId }, transaction });
+        if (!subCategory) {
+            await transaction.rollback();
+            return res.status(404).json({ message: "Sub-category not found" });
+        }
+
+        const mappings = await db.ArticleCategory.findAll({ where: { sub_category_id: subCategoryId }, attributes: ['article_id'], transaction });
+        const articleIds = [...new Set(mappings.map(m => m.article_id))];
+
+        await db.ArticleCategory.destroy({ where: { sub_category_id: subCategoryId }, transaction });
+
+        for (const articleId of articleIds) {
+            const remaining = await db.ArticleCategory.count({ where: { article_id: articleId }, transaction });
+            if (remaining === 0) {
+                await db.Articles.destroy({ where: { id: articleId }, transaction });
+            }
+        }
+
+        await subCategory.destroy({ transaction });
+
+        await transaction.commit();
+        return res.sendStatus(204);
     } catch (e) {
         console.error(e);
+        try { await transaction.rollback(); } catch (er) { console.error(er); }
         return res.sendStatus(500);
     }
 }

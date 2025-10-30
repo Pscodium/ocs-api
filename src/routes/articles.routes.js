@@ -7,11 +7,13 @@ const enums = require("../database/enums/index");
  * @param {import('../middleware/authentication')} auth
  */
 exports.init = function(app, auth) {
-    app.post('/article/create', auth.sessionOrJwt, auth.hasPermissions([enums.Permissions.MASTER_ADMIN_LEVEL, enums.Permissions.CAN_POST]), articles.create);
-    app.get('/list/articles/:tagId', articles.getArticlesByTagId);
-    app.get('/list-all/articles', articles.getAllArticles);
-    app.get('/list-all/tags', articles.getAllTags);
-    app.put('/article/update/:id', auth.sessionOrJwt, auth.hasPermissions([enums.Permissions.MASTER_ADMIN_LEVEL, enums.Permissions.CAN_POST]), articles.updateArticle)
-    app.delete('/article/delete/:id', auth.sessionOrJwt, auth.hasPermissions([enums.Permissions.MASTER_ADMIN_LEVEL, enums.Permissions.CAN_POST]), articles.deleteArticle)
-    app.delete('/tag/delete/:id', auth.sessionOrJwt, auth.hasPermissions([enums.Permissions.MASTER_ADMIN_LEVEL, enums.Permissions.CAN_POST]), articles.deleteTag)
+    app.post('/article/create/:categoryId/:subCategoryId', auth.sessionOrJwt, auth.hasPermissions([enums.Permissions.MASTER_ADMIN_LEVEL, enums.Permissions.CAN_POST]), articles.create);
+    app.post('/article/create/:categoryId', auth.sessionOrJwt, auth.hasPermissions([enums.Permissions.MASTER_ADMIN_LEVEL, enums.Permissions.CAN_POST]), articles.create);
+    app.post('/category', auth.sessionOrJwt, auth.hasPermissions([enums.Permissions.MASTER_ADMIN_LEVEL, enums.Permissions.CAN_POST]), articles.createCategory);
+    app.post('/sub/category/:categoryId', auth.sessionOrJwt, auth.hasPermissions([enums.Permissions.MASTER_ADMIN_LEVEL, enums.Permissions.CAN_POST]), articles.createSubCategory);
+    app.get('/categories', articles.getAllCategories);
+    app.put('/article/:articleId', auth.sessionOrJwt, auth.hasPermissions([enums.Permissions.MASTER_ADMIN_LEVEL, enums.Permissions.CAN_POST]), articles.updateArticle);
+    app.delete('/article/:articleId', auth.sessionOrJwt, auth.hasPermissions([enums.Permissions.MASTER_ADMIN_LEVEL, enums.Permissions.CAN_POST]), articles.deleteArticle);
+    app.delete('/category/:categoryId', auth.sessionOrJwt, auth.hasPermissions([enums.Permissions.MASTER_ADMIN_LEVEL, enums.Permissions.CAN_POST]), articles.deleteCategory);
+    app.delete('/sub/category/:subCategoryId', auth.sessionOrJwt, auth.hasPermissions([enums.Permissions.MASTER_ADMIN_LEVEL, enums.Permissions.CAN_POST]), articles.deleteSubCategory);
 };

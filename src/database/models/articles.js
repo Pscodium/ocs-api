@@ -5,7 +5,7 @@ const { DataTypes } = require("sequelize");
  * @type {object}
  * @property {string} id
  * @property {string} title
- * @property {string} body
+ * @property {string} content
  * @property {string[]} files
  */
 
@@ -26,9 +26,14 @@ module.exports = function Articles(sequelize) {
             type: DataTypes.STRING,
             allowNull: false,
         },
-        body: {
+        content: {
             type: DataTypes.TEXT,
             allowNull: false
+        },
+        hex: {
+            type: DataTypes.STRING({ length: 7 }),
+            allowNull: false,
+            defaultValue: "#000000"
         },
         files: {
             type: DataTypes.JSON,
@@ -40,12 +45,21 @@ module.exports = function Articles(sequelize) {
             Articles.belongsTo(models.Users, {
                 onDelete: "cascade"
             });
-            Articles.belongsToMany(models.Tags, {
-                as: "Tags",
-                through: "article_tags",
-                foreignKey: "ArticleId",
-                timestamps: true,
-                onDelete: 'CASCADE'
+
+            // Articles <-> Category via ArticleCategory
+            Articles.belongsToMany(models.Category, {
+                through: models.ArticleCategory,
+                foreignKey: 'article_id',
+                otherKey: 'category_id',
+                as: 'categories'
+            });
+
+            // Articles <-> SubCategory via ArticleCategory
+            Articles.belongsToMany(models.SubCategory, {
+                through: models.ArticleCategory,
+                foreignKey: 'article_id',
+                otherKey: 'sub_category_id',
+                as: 'subCategories'
             });
         },
         charset: 'utf8mb4',
