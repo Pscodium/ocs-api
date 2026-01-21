@@ -7,8 +7,6 @@ exports.create = async (req, res) => {
         const { categoryId, subCategoryId } = req.params;
         let subCategory = null;
 
-        console.log('aqui ', categoryId, subCategoryId);
-
         if (!title || !content) {
             return res.status(400).json({ message: "Title and content are required" });
         }
@@ -160,17 +158,25 @@ exports.updateArticle = async (req, res) => {
 }
 
 exports.deleteArticle = async (req, res) => {
+    const transaction = await db.sequelize.transaction();
     try {
-        const { articleId } = req.params;
-        const article = await db.Articles.findOne({ where: { id: articleId } });
+        const { id } = req.params;
+        const article = await db.Articles.findOne({ where: { id }, transaction });
         if (!article) {
+            await transaction.rollback();
             return res.status(404).json({ message: "Article not found" });
         }
 
-        await article.destroy();
+        // remover mappings na tabela through antes de apagar o artigo para evitar FK constraint
+        await db.ArticleCategory.destroy({ where: { article_id: id }, transaction });
+
+        await article.destroy({ transaction });
+
+        await transaction.commit();
         return res.sendStatus(204);
     } catch (e) {
         console.error(e);
+        try { await transaction.rollback(); } catch (er) { console.error(er); }
         return res.sendStatus(500);
     }
 }

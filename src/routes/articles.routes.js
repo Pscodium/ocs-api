@@ -13,7 +13,7 @@ exports.init = function(app, auth) {
     app.post('/sub/category/:categoryId', auth.sessionOrJwt, auth.hasPermissions([enums.Permissions.MASTER_ADMIN_LEVEL, enums.Permissions.CAN_POST]), articles.createSubCategory);
     app.get('/categories', articles.getAllCategories);
     app.put('/article/:articleId', auth.sessionOrJwt, auth.hasPermissions([enums.Permissions.MASTER_ADMIN_LEVEL, enums.Permissions.CAN_POST]), articles.updateArticle);
-    app.delete('/article/:articleId', auth.sessionOrJwt, auth.hasPermissions([enums.Permissions.MASTER_ADMIN_LEVEL, enums.Permissions.CAN_POST]), articles.deleteArticle);
+    app.delete('/article/:id', auth.sessionOrJwt, auth.hasPermissions([enums.Permissions.MASTER_ADMIN_LEVEL, enums.Permissions.CAN_POST]), articles.deleteArticle);
     app.delete('/category/:categoryId', auth.sessionOrJwt, auth.hasPermissions([enums.Permissions.MASTER_ADMIN_LEVEL, enums.Permissions.CAN_POST]), articles.deleteCategory);
     app.delete('/sub/category/:subCategoryId', auth.sessionOrJwt, auth.hasPermissions([enums.Permissions.MASTER_ADMIN_LEVEL, enums.Permissions.CAN_POST]), articles.deleteSubCategory);
 };
