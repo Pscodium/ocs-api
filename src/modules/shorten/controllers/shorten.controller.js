@@ -1,8 +1,6 @@
 require('dotenv').config();
 const redis = require('../../../config/redis.js');
 
-const { nanoid } = require('nanoid');
-
 const TTL_12_DAYS = 60 * 60 * 24 * 12;
 
 /**
@@ -13,6 +11,7 @@ const TTL_12_DAYS = 60 * 60 * 24 * 12;
  */
 exports.shortenUrl = async function(req, res) {
     try {
+        const { nanoid } = await import('nanoid');
         const { url } = req.body
 
         if (!url) {
