@@ -8,11 +8,12 @@ const bodyParser = require('body-parser');
 const http = require('http');
 const { Server } = require('socket.io');
 
-const routeInitialization = require('./routes/config');
+const routeInitialization = require('./routes');
 const logger = require('./services/logs.service');
 const { logs } = require('./middleware/logs');
 const authentication = require('./middleware/authentication');
 const cookieParser = require('cookie-parser');
+const { bootstrapServers } = require('./config/servers');
 
 const app = express();
 const server = http.createServer(app);
@@ -59,6 +60,7 @@ function start() {
             if (!disabled_logs) {
                 console.log(logger.success("Connection established!"));
                 console.log(logger.available(`Server running on port ${process.env.API_PORT}`));
+                bootstrapServers();
             }
         });
     } catch (err) {
