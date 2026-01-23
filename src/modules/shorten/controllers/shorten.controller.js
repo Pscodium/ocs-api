@@ -51,7 +51,30 @@ exports.redirectUrl = async function(req, res) {
         const data = await redis.hGetAll(`url:${code}`)
 
         if (!data?.original) {
-            return res.status(404).json({ error: "URL não encontrada" })
+            return res.status(404).send(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>URL Não Encontrada</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #f5f5f5; }
+                        .container { text-align: center; background: white; padding: 40px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+                        h1 { color: #333; margin: 0 0 10px 0; }
+                        p { color: #666; margin: 10px 0; }
+                        a { color: #007bff; text-decoration: none; }
+                        a:hover { text-decoration: underline; }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <h1>404 - URL Não Encontrada</h1>
+                        <p>O link que você está tentando acessar não existe ou expirou.</p>
+                        <a href="/">Voltar à página inicial</a>
+                    </div>
+                </body>
+                </html>
+            `)
         }
 
         await redis.hIncrBy(`url:${code}`, "clicks", 1)
@@ -111,6 +134,9 @@ exports.getUserUrls = async function(req, res) {
                 }
             }
         } while (cursor !== '0')
+
+        // Ordena por data de criação (mais novo primeiro)
+        userUrls.sort((a, b) => b.createdAt - a.createdAt)
 
         // Calcula paginação
         const totalItems = userUrls.length
