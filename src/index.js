@@ -28,7 +28,7 @@ app.set('io', io);
 
 function start() {
     try {
-        const allowedOrigins = [process.env.FRONTEND_ORIGIN, process.env.ELECTRON_ORIGIN];
+        const allowedOrigins = [process.env.FRONTEND_ORIGIN, process.env.ELECTRON_ORIGIN, process.env.FINANCIAL_ORIGIN];
 
         const options = {
             origin: allowedOrigins,

@@ -259,6 +259,39 @@ class AuthService {
      * @param {import('express').Request} req
      * @param {import('express').Response} res
      */
+    async genericLogout(req, res) {
+        const { origin } = req.headers;
+        try {
+            const deletedSessions = await db.Session.destroy({
+                where: {
+                    userId: req.userId,
+                    origin
+                }
+            });
+            if (deletedSessions > 0) {
+                res.clearCookie('token', {
+                    domain: process.env.FRONTEND_DOMAIN,
+                    sameSite: 'none',
+                    secure: true,
+                    path: '/'
+                });
+
+                return res.status(200).json({
+                    success: true,
+                });
+            } else {
+                return res.status(401).json({ message: "Not Authorized" });
+            }
+        } catch (err) {
+            return res.status(403).json({ message: err.message });
+        }
+    }
+
+    /**
+     *
+     * @param {import('express').Request} req
+     * @param {import('express').Response} res
+     */
     async sessionLogout(req, res) {
         try {
             const deletedSessions = await db.Session.destroy({
@@ -288,8 +321,8 @@ class AuthService {
 
     /**
      *
-     * @param {Request} req
-     * @param {Response} req
+     * @param {import('express').Request} req
+     * @param {import('express').Response} res
      * @param {import('express').NextFunction} next
      */
     async sessionOrJwt(req, res, next) {

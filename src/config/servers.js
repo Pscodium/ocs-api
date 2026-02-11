@@ -8,13 +8,15 @@ const cookieParser = require('cookie-parser');
 const { logs } = require('../middleware/logs');
 const logger = require('../services/logs.service');
 const shortenRoutes = require('../modules/shorten/routes');
+const financialRoutes = require('../modules/financial/routes')
 const authentication = require('../middleware/authentication');
 
-const allowedOrigins = [process.env.FRONTEND_ORIGIN, process.env.ELECTRON_ORIGIN];
+const allowedOrigins = [process.env.FRONTEND_ORIGIN, process.env.ELECTRON_ORIGIN, process.env.FINANCIAL_ORIGIN];
 const disabled_logs = process.env.DISABLED_LOGS;
 
 exports.bootstrapServers = function() {
     serverStartup('Shorten Server', process.env.SHORTEN_PORT, true, allowedOrigins, disabled_logs, shortenRoutes, authentication);
+    serverStartup('Financial Server', process.env.FINANCIAL_PORT, true, allowedOrigins, disabled_logs, financialRoutes, authentication);
 }
 
 

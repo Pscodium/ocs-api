@@ -12,7 +12,7 @@ exports.init = function(app, auth) {
     app.post('/electron/login', auth.unexpiredLogin);
     app.get('/electron/logout', auth.sessionOrJwt, auth.unexpiredLogout)
     app.get('/check/auth', auth.sessionOrJwt, auth.check);
-    app.get('/logout', auth.sessionOrJwt, auth.sessionLogout);
+    app.get('/logout', auth.sessionOrJwt, auth.genericLogout);
     app.get('/data/user', auth.sessionOrJwt, users.getUserData);
     app.get('/users', auth.sessionOrJwt, users.getUsers);
     app.get('/user/:id', auth.sessionOrJwt, users.getUserById);
