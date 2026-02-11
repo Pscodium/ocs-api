@@ -28,7 +28,7 @@ exports.createMonth = async function(req, res) {
         });
 
         if (existing) {
-            return res.status(400).json({ error: 'Mês já existe' });
+            return res.status(204).json({ message: 'Mês já existe' });
         }
 
         await db.Month.create({
