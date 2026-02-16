@@ -28,6 +28,11 @@ module.exports = function Subscription(sequelize) {
             type: DataTypes.STRING(50),
             primaryKey: true
         },
+        userId: {
+            type: DataTypes.STRING(191),
+            allowNull: true,
+            field: 'UserId'
+        },
         month_key: {
             type: DataTypes.STRING(7),
             allowNull: false,
@@ -65,11 +70,7 @@ module.exports = function Subscription(sequelize) {
         }
     }, {
         tableName: "subscriptions",
-        associate: function(models) {
-            Subscription.belongsTo(models.Users, {
-                onDelete: "cascade"
-            });
-        }
+        associate: function() {}
     });
 
     return Subscription;

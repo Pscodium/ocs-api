@@ -23,6 +23,11 @@ module.exports = function Month(sequelize) {
             defaultValue: sequelize.Sequelize.UUIDV4,
             primaryKey: true
         },
+        userId: {
+            type: DataTypes.STRING(191),
+            allowNull: true,
+            field: 'UserId'
+        },
         month_key: {
             type: DataTypes.STRING(7),
             allowNull: false,
@@ -34,11 +39,7 @@ module.exports = function Month(sequelize) {
         }
     }, {
         tableName: "month",
-        associate: function(models) {
-            Month.belongsTo(models.Users, {
-                onDelete: "cascade"
-            });
-        }
+        associate: function() {}
     });
 
 

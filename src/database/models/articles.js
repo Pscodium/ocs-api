@@ -22,6 +22,11 @@ module.exports = function Articles(sequelize) {
             defaultValue: sequelize.Sequelize.UUIDV4,
             primaryKey: true
         },
+        userId: {
+            type: DataTypes.STRING(191),
+            allowNull: true,
+            field: 'UserId'
+        },
         title: {
             type: DataTypes.STRING,
             allowNull: false,
@@ -37,9 +42,6 @@ module.exports = function Articles(sequelize) {
     }, {
         tableName: "articles",
         associate: function(models) {
-            Articles.belongsTo(models.Users, {
-                onDelete: "cascade"
-            });
             Articles.belongsToMany(models.Tags, {
                 as: "Tags",
                 through: "article_tags",

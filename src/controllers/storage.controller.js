@@ -110,7 +110,7 @@ exports.fileUpload = async (req, res) => {
             const uploaded = await db.Files.create({
                 name: finalFileName,
                 url: fileUrl,
-                UserId: req.userId,
+                userId: req.userId,
                 type: file.mimetype
             });
 
@@ -382,9 +382,6 @@ exports.deleteMultipleFiles = async (req, res) => {
 exports.getFiles = async (req, res) => {
     try {
         const files = await db.Files.findAll({
-            include: [{
-                model: db.Users
-            }],
             order: [['createdAt', 'DESC']],
         })
 
@@ -454,7 +451,7 @@ exports.createFolder = async (req, res) => {
 
         const folder = await db.Folder.create({
             name: folderName,
-            UserId: req.userId,
+            userId: req.userId,
             private,
             hex,
             type

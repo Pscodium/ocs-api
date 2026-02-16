@@ -8,7 +8,7 @@ exports.create = async (req, res) => {
         const article = await db.Articles.create({
             title,
             body,
-            UserId: req.userId
+            userId: req.userId
         });
 
         if (tags) {

@@ -25,6 +25,11 @@ module.exports = function Files(sequelize) {
             defaultValue: sequelize.Sequelize.UUIDV4,
             primaryKey: true
         },
+        userId: {
+            type: DataTypes.STRING(191),
+            allowNull: true,
+            field: 'UserId'
+        },
         name: {
             type: DataTypes.STRING,
             allowNull: true,
@@ -44,9 +49,6 @@ module.exports = function Files(sequelize) {
     }, {
         tableName: "files",
         associate: function(models) {
-            Files.belongsTo(models.Users, {
-                onDelete: "cascade"
-            });
             Files.belongsToMany(models.Folder, {
                 as: "Folder",
                 through: "file_folders",

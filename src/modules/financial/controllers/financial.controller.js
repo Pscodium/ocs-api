@@ -34,7 +34,7 @@ exports.createMonth = async function(req, res) {
         await db.Month.create({
             month_key: monthData.monthKey,
             data: JSON.stringify(monthData),
-            UserId: userId
+            userId: userId
         });
 
         return res.status(201).json(monthData);
@@ -115,7 +115,7 @@ exports.getMonths = async function(req, res) {
         )
 
         if (results.length === 0) {
-            return res.status(404).json({ error: 'Nenhum mês encontrado' });
+            return res.status(200).json([]);
         }
 
         const months = results.map(row => {
@@ -223,7 +223,7 @@ exports.getBudgets = async function(req, res) {
 
         const budgets = await db.Budget.findAll({
             where: {
-                UserId: userId,
+                userId: userId,
                 month_key: monthKey
             },
             order: [['created_at', 'ASC']]
@@ -259,7 +259,7 @@ exports.createBudget = async function(req, res) {
         const existing = await db.Budget.findOne({
             where: {
                 id: budgetData.id,
-                UserId: userId
+                userId: userId
             }
         });
 
@@ -274,7 +274,7 @@ exports.createBudget = async function(req, res) {
             category_name: budgetData.categoryName,
             limit: budgetData.limit,
             spent: budgetData.spent || 0,
-            UserId: userId
+            userId: userId
         });
 
         return res.status(201).json(budget);
@@ -299,7 +299,7 @@ exports.updateBudget = async function(req, res) {
         const budget = await db.Budget.findOne({
             where: {
                 id: budgetId,
-                UserId: userId,
+                userId: userId,
                 month_key: monthKey
             }
         });
@@ -336,7 +336,7 @@ exports.deleteBudget = async function(req, res) {
         const result = await db.Budget.destroy({
             where: {
                 id: budgetId,
-                UserId: userId,
+                userId: userId,
                 month_key: monthKey
             }
         });
@@ -367,7 +367,7 @@ exports.getInvestments = async function(req, res) {
 
         const investments = await db.Investment.findAll({
             where: {
-                UserId: userId,
+                userId: userId,
                 month_key: monthKey
             },
             order: [['created_at', 'ASC']]
@@ -411,7 +411,7 @@ exports.createInvestment = async function(req, res) {
         const existing = await db.Investment.findOne({
             where: {
                 id: investmentData.id,
-                UserId: userId
+                userId: userId
             }
         });
 
@@ -428,7 +428,7 @@ exports.createInvestment = async function(req, res) {
             current_value: investmentData.currentValue || null,
             purchase_date: investmentData.purchaseDate,
             notes: investmentData.notes || null,
-            UserId: userId
+            userId: userId
         });
 
         return res.status(201).json(investment);
@@ -453,7 +453,7 @@ exports.updateInvestment = async function(req, res) {
         const investment = await db.Investment.findOne({
             where: {
                 id: investmentId,
-                UserId: userId,
+                userId: userId,
                 month_key: monthKey
             }
         });
@@ -492,7 +492,7 @@ exports.deleteInvestment = async function(req, res) {
         const result = await db.Investment.destroy({
             where: {
                 id: investmentId,
-                UserId: userId,
+                userId: userId,
                 month_key: monthKey
             }
         });
@@ -523,7 +523,7 @@ exports.getGoals = async function(req, res) {
 
         const goals = await db.Goal.findAll({
             where: {
-                UserId: userId,
+                userId: userId,
                 month_key: monthKey
             },
             order: [['created_at', 'ASC']]
@@ -563,7 +563,7 @@ exports.createGoal = async function(req, res) {
         const existing = await db.Goal.findOne({
             where: {
                 id: goalData.id,
-                UserId: userId
+                userId: userId
             }
         });
 
@@ -579,7 +579,7 @@ exports.createGoal = async function(req, res) {
             current_amount: goalData.currentAmount || 0,
             deadline: goalData.deadline || null,
             category: goalData.category,
-            UserId: userId
+            userId: userId
         });
 
         return res.status(201).json(goal);
@@ -604,7 +604,7 @@ exports.updateGoal = async function(req, res) {
         const goal = await db.Goal.findOne({
             where: {
                 id: goalId,
-                UserId: userId,
+                userId: userId,
                 month_key: monthKey
             }
         });
@@ -642,7 +642,7 @@ exports.deleteGoal = async function(req, res) {
         const result = await db.Goal.destroy({
             where: {
                 id: goalId,
-                UserId: userId,
+                userId: userId,
                 month_key: monthKey
             }
         });
@@ -673,7 +673,7 @@ exports.getSubscriptions = async function(req, res) {
 
         const subscriptions = await db.Subscription.findAll({
             where: {
-                UserId: userId,
+                userId: userId,
                 month_key: monthKey
             },
             order: [['created_at', 'ASC']]
@@ -717,7 +717,7 @@ exports.createSubscription = async function(req, res) {
         const existing = await db.Subscription.findOne({
             where: {
                 id: subscriptionData.id,
-                UserId: userId
+                userId: userId
             }
         });
 
@@ -735,7 +735,7 @@ exports.createSubscription = async function(req, res) {
             category: subscriptionData.category || null,
             active: subscriptionData.active !== undefined ? subscriptionData.active : true,
             notes: subscriptionData.notes || null,
-            UserId: userId
+            userId: userId
         });
 
         return res.status(201).json(subscription);
@@ -760,7 +760,7 @@ exports.updateSubscription = async function(req, res) {
         const subscription = await db.Subscription.findOne({
             where: {
                 id: subscriptionId,
-                UserId: userId,
+                userId: userId,
                 month_key: monthKey
             }
         });
@@ -800,7 +800,7 @@ exports.deleteSubscription = async function(req, res) {
         const result = await db.Subscription.destroy({
             where: {
                 id: subscriptionId,
-                UserId: userId,
+                userId: userId,
                 month_key: monthKey
             }
         });

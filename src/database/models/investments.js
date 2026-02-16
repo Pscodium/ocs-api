@@ -27,6 +27,11 @@ module.exports = function Investment(sequelize) {
             type: DataTypes.STRING(50),
             primaryKey: true
         },
+        userId: {
+            type: DataTypes.STRING(191),
+            allowNull: true,
+            field: 'UserId'
+        },
         month_key: {
             type: DataTypes.STRING(7),
             allowNull: false,
@@ -60,11 +65,7 @@ module.exports = function Investment(sequelize) {
         }
     }, {
         tableName: "investments",
-        associate: function(models) {
-            Investment.belongsTo(models.Users, {
-                onDelete: "cascade"
-            });
-        }
+        associate: function() {}
     });
 
     return Investment;

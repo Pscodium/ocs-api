@@ -26,6 +26,11 @@ module.exports = function Goal(sequelize) {
             type: DataTypes.STRING(50),
             primaryKey: true
         },
+        userId: {
+            type: DataTypes.STRING(191),
+            allowNull: true,
+            field: 'UserId'
+        },
         month_key: {
             type: DataTypes.STRING(7),
             allowNull: false,
@@ -55,11 +60,7 @@ module.exports = function Goal(sequelize) {
         }
     }, {
         tableName: "goals",
-        associate: function(models) {
-            Goal.belongsTo(models.Users, {
-                onDelete: "cascade"
-            });
-        }
+        associate: function() {}
     });
 
     return Goal;
