@@ -38,4 +38,5 @@ exports.init = function(app, auth) {
     
     // Health
     app.get('/health', financial.apiHealthCheck);
+    app.get('/check/auth', auth.sessionOrJwt, auth.check);
 };
