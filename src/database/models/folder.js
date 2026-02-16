@@ -27,7 +27,7 @@ module.exports = function Folder(sequelize) {
         userId: {
             type: DataTypes.STRING(191),
             allowNull: true,
-            field: 'UserId'
+            field: 'userId'
         },
         name: {
             type: DataTypes.STRING,

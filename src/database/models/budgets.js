@@ -28,7 +28,7 @@ module.exports = function Budget(sequelize) {
         userId: {
             type: DataTypes.STRING(191),
             allowNull: true,
-            field: 'UserId'
+            field: 'userId'
         },
         month_key: {
             type: DataTypes.STRING(7),

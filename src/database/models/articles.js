@@ -25,7 +25,7 @@ module.exports = function Articles(sequelize) {
         userId: {
             type: DataTypes.STRING(191),
             allowNull: true,
-            field: 'UserId'
+            field: 'userId'
         },
         title: {
             type: DataTypes.STRING,
