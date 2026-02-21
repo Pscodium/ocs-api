@@ -175,6 +175,35 @@ exports.updateMonth = async function(req, res) {
     }
 }
 
+/**
+ * 
+ * @param {import('express').Request} req 
+ * @param {import('express').Response} res 
+ * @returns 
+ */
+exports.deleteMonth = async function(req, res) {
+    try {
+        const userId = req.userId
+        const { monthKey } = req.params
+
+        const result = await db.Month.destroy({
+            where: {
+                month_key: monthKey,
+                userId: userId
+            }
+        });
+
+        if (result === 0) {
+            return res.status(404).json({ error: 'Mês não encontrado' });
+        }
+
+        return res.status(204).send();
+    } catch (e) {
+        console.error(e);
+        return res.sendStatus(500);
+    }
+}
+
 exports.getMonthByKey = async function(req, res) {
     try {
         const userId = req.userId
