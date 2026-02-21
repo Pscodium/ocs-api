@@ -57,7 +57,8 @@ class AuthService {
             req.userExternalId = payload.sub;
             req.auth = {
                 roles: normalizeRoles(payload.roles),
-                clientId: payload.client_id
+                clientId: payload.client_id,
+                plan: payload.plan
             };
             req.user = {
                 id: payload.sub,
@@ -74,7 +75,6 @@ class AuthService {
 
     async loggedOrNot(req, res, next) {
         const token = getBearerToken(req);
-        console.log('entra aqui ', token)
         if (!token) {
             req.user = undefined;
             return next();
@@ -116,6 +116,7 @@ class AuthService {
             return res.status(200).json({
                 userId: req.userId,
                 roles: (req.auth && req.auth.roles) || [],
+                plan: req.auth ? req.auth.plan : undefined,
                 clientId: req.auth ? req.auth.clientId : undefined
             });
         } catch (err) {
