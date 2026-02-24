@@ -20,13 +20,13 @@ const disabled_logs = process.env.DISABLED_LOGS;
 exports.bootstrapServers = function() {
     serverStartup('Shorten Server', process.env.SHORTEN_PORT, true, corsOrigins, disabled_logs, shortenRoutes, authentication);
     serverStartup('Financial Server', process.env.FINANCIAL_PORT, true, corsOrigins, disabled_logs, financialRoutes, authentication);
-    serverStartup('Product Finder Server', process.env.PRODUCT_FINDER_PORT, true, corsOrigins, disabled_logs, finderRoutes);
+    serverStartup('Product Finder Server', process.env.PRODUCT_FINDER_PORT, true, corsOrigins, disabled_logs, finderRoutes, undefined, process.env.FINDER_ENABLE_ALL_CORS === 'true');
 }
 
 
-const serverSetup = function(hasCookieParser, allowedOrigins = [], disabled_logs = false) {
+const serverSetup = function(hasCookieParser, allowedOrigins = [], disabled_logs = false, enableAllCors = false) {
     const app = express();
-    const options = {
+    const options = enableAllCors ? { origin: '*' } : {
         origin: allowedOrigins,
         credentials: true
     };
@@ -42,8 +42,8 @@ const serverSetup = function(hasCookieParser, allowedOrigins = [], disabled_logs
 }
 
 
-function serverStartup(serverName, port, hasCookieParser, allowedOrigins = [], disabled_logs = false, routesCallback, auth) {
-    const { app, router } = serverSetup(hasCookieParser, allowedOrigins, disabled_logs);
+function serverStartup(serverName, port, hasCookieParser, allowedOrigins = [], disabled_logs = false, routesCallback, auth, enableAllCors = false) {
+    const { app, router } = serverSetup(hasCookieParser, allowedOrigins, disabled_logs, enableAllCors);
     const routes = routesCallback(router, auth);
 
     app.use(routes);
