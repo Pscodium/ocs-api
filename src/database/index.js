@@ -87,7 +87,7 @@ class DatabaseInstance {
                 console.log(logger.available("All tables have been synchronized."));
             }
         }).catch((err) => {
-            console.error(logger.error(`Database synchronization error: ${err.message}`));
+            console.error(logger.alert(`Database synchronization error: ${err.message}`));
             console.error(err);
         });
     }
@@ -98,7 +98,7 @@ class DatabaseInstance {
                 console.log(logger.available("All tables have been synchronized."));
             }
         }).catch((err) => {
-            console.error(logger.error(`Database reset sync error: ${err.message}`));
+            console.error(logger.alert(`Database reset sync error: ${err.message}`));
             console.error(err);
         });
     }
