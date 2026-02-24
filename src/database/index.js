@@ -44,7 +44,15 @@ class DatabaseInstance {
             host: process.env.DB_HOST,
             port: String(process.env.DB_PORT),
             dialect: 'mysql',
-            logging: false
+            logging: false,
+            pool: {
+                max: 20,
+                min: 2,
+                acquire: 30000,
+                idle: 10000
+            },
+            connectTimeout: 30000,
+            requestTimeout: 30000
         });
         this.db.sequelize = sequelize;
 
