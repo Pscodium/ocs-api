@@ -18,7 +18,7 @@ const disabled_logs = process.env.DISABLED_LOGS;
 exports.bootstrapServers = function() {
     serverStartup('Shorten Server', process.env.SHORTEN_PORT, true, allowedOrigins, disabled_logs, shortenRoutes, authentication);
     serverStartup('Financial Server', process.env.FINANCIAL_PORT, true, allowedOrigins, disabled_logs, financialRoutes, authentication);
-    serverStartup('Product Finder Server', process.env.PRODUCT_FINDER_PORT, true, allowedOrigins, disabled_logs, finderRoutes, authentication);
+    serverStartup('Product Finder Server', process.env.PRODUCT_FINDER_PORT, true, allowedOrigins, disabled_logs, finderRoutes);
 }
 
 
