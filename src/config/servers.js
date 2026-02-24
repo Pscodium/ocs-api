@@ -12,13 +12,15 @@ const financialRoutes = require('../modules/financial/routes')
 const finderRoutes = require('../modules/finder/routes');
 const authentication = require('../middleware/authentication');
 
-const allowedOrigins = [process.env.FRONTEND_ORIGIN, process.env.ELECTRON_ORIGIN, process.env.FINANCIAL_ORIGIN];
+const corsOrigins = process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(",").map((origin) => origin.trim()).filter(Boolean)
+    : [];
 const disabled_logs = process.env.DISABLED_LOGS;
 
 exports.bootstrapServers = function() {
-    serverStartup('Shorten Server', process.env.SHORTEN_PORT, true, allowedOrigins, disabled_logs, shortenRoutes, authentication);
-    serverStartup('Financial Server', process.env.FINANCIAL_PORT, true, allowedOrigins, disabled_logs, financialRoutes, authentication);
-    serverStartup('Product Finder Server', process.env.PRODUCT_FINDER_PORT, true, allowedOrigins, disabled_logs, finderRoutes);
+    serverStartup('Shorten Server', process.env.SHORTEN_PORT, true, corsOrigins, disabled_logs, shortenRoutes, authentication);
+    serverStartup('Financial Server', process.env.FINANCIAL_PORT, true, corsOrigins, disabled_logs, financialRoutes, authentication);
+    serverStartup('Product Finder Server', process.env.PRODUCT_FINDER_PORT, true, corsOrigins, disabled_logs, finderRoutes);
 }
 
 

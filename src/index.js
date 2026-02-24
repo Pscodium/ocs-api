@@ -15,11 +15,15 @@ const authentication = require('./middleware/authentication');
 const cookieParser = require('cookie-parser');
 const { bootstrapServers } = require('./config/servers');
 
+const corsOrigins = process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(",").map((origin) => origin.trim()).filter(Boolean)
+    : [];
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: [process.env.FRONTEND_ORIGIN, process.env.ELECTRON_ORIGIN],
+        origin: corsOrigins,
         credentials: true
     }
 });
@@ -28,10 +32,8 @@ app.set('io', io);
 
 function start() {
     try {
-        const allowedOrigins = [process.env.FRONTEND_ORIGIN, process.env.ELECTRON_ORIGIN, process.env.FINANCIAL_ORIGIN];
-
         const options = {
-            origin: allowedOrigins,
+            origin: corsOrigins,
             credentials: true
         };
 
