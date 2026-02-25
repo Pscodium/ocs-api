@@ -8,12 +8,13 @@ const { DataTypes } = require("sequelize");
 module.exports = function EstablishmentProducts(sequelize) {
     const EstablishmentProducts = sequelize.define("EstablishmentProducts", {
         id: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.UUID,
             primaryKey: true,
-            allowNull: false
+            allowNull: false,
+            defaultValue: DataTypes.UUIDV4
         },
         establishmentId: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.UUID,
             allowNull: false,
             references: {
                 model: "establishments",
@@ -21,24 +22,20 @@ module.exports = function EstablishmentProducts(sequelize) {
             },
             field: "establishmentId"
         },
-        nome: {
+        name: {
             type: DataTypes.STRING,
             allowNull: false
         },
-        descricao: {
+        description: {
             type: DataTypes.TEXT,
             allowNull: false
         },
-        categoria: {
+        category: {
             type: DataTypes.STRING,
             allowNull: false
         },
-        preco: {
-            type: DataTypes.DECIMAL(10, 2),
-            allowNull: false
-        },
-        imagem: {
-            type: DataTypes.TEXT,
+        stock: {
+            type: DataTypes.INTEGER,
             allowNull: true
         },
         createdAt: {
@@ -55,7 +52,7 @@ module.exports = function EstablishmentProducts(sequelize) {
         tableName: "establishment_products",
         associate: function(models) {
             EstablishmentProducts.belongsTo(models.Establishments, {
-                as: "estabelecimento",
+                as: "establishment",
                 foreignKey: "establishmentId",
                 onDelete: "CASCADE"
             });
@@ -65,10 +62,10 @@ module.exports = function EstablishmentProducts(sequelize) {
                 fields: ["establishmentId"]
             },
             {
-                fields: ["categoria"]
+                fields: ["category"]
             },
             {
-                fields: ["preco"]
+                fields: ["stock"]
             }
         ],
         charset: 'utf8mb4',

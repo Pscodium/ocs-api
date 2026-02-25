@@ -8,11 +8,12 @@ const { DataTypes } = require("sequelize");
 module.exports = function Establishments(sequelize) {
     const Establishments = sequelize.define("Establishments", {
         id: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.UUID,
             primaryKey: true,
-            allowNull: false
+            allowNull: false,
+            defaultValue: DataTypes.UUIDV4
         },
-        nome: {
+        name: {
             type: DataTypes.STRING,
             allowNull: false
         },
@@ -24,15 +25,15 @@ module.exports = function Establishments(sequelize) {
             type: DataTypes.DECIMAL(10, 7),
             allowNull: false
         },
-        categoria: {
+        category: {
             type: DataTypes.STRING,
             allowNull: false
         },
-        endereco: {
-            type: DataTypes.STRING,
+        description: {
+            type: DataTypes.TEXT,
             allowNull: false
         },
-        telefone: {
+        address: {
             type: DataTypes.STRING,
             allowNull: false
         },
@@ -50,14 +51,14 @@ module.exports = function Establishments(sequelize) {
         tableName: "establishments",
         associate: function(models) {
             Establishments.hasMany(models.EstablishmentProducts, {
-                as: "produtos",
+                as: "products",
                 foreignKey: "establishmentId",
                 onDelete: "CASCADE"
             });
         },
         indexes: [
             {
-                fields: ["categoria"]
+                fields: ["category"]
             },
             {
                 fields: ["latitude", "longitude"]
