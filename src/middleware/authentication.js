@@ -17,12 +17,37 @@ async function validateAccessToken(token) {
 }
 
 function getBearerToken(req) {
-    const auth = req.headers.authorization;
-    if (!auth || !auth.startsWith('Bearer ')) {
-        return null;
+    const getTokenFromHeader = (value) => {
+        if (typeof value !== 'string') {
+            return null;
+        }
+
+        const normalized = value.trim();
+        if (!normalized) {
+            return null;
+        }
+
+        const bearerMatch = normalized.match(/^Bearer\s+(.+)$/i);
+        if (!bearerMatch) {
+            return null;
+        }
+
+        return bearerMatch[1].trim() || null;
+    };
+
+    const headerToken = getTokenFromHeader(req?.headers?.authorization)
+        || getTokenFromHeader(req?.headers?.authentication);
+
+    if (headerToken) {
+        return headerToken;
     }
 
-    return auth.slice('Bearer '.length).trim();
+    const cookieToken = req?.cookies?.access_token;
+    if (typeof cookieToken === 'string' && cookieToken.trim()) {
+        return cookieToken.trim();
+    }
+
+    return null;
 }
 
 function normalizeRoles(roles) {
