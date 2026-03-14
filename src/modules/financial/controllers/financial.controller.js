@@ -1,6 +1,10 @@
 const db = require('../../../config/sequelize');
 const { randomUUID } = require('crypto');
 const { getIdentity } = require('../../../config/featureFlags');
+const {
+    serializeCategoriesFromRows,
+    serializeBillsFromRows
+} = require('../dtos/month.dto');
 
 function parseMonthPayload(rawData) {
     if (!rawData) {
@@ -158,41 +162,9 @@ async function replaceMonthBills({ userId, monthKey, bills, transaction }) {
     await db.MonthBill.bulkCreate(rows, { transaction });
 }
 
-function serializeCategoriesFromRows(rows) {
-    if (!Array.isArray(rows) || rows.length === 0) {
-        return [];
-    }
-
-    return rows.map((row) => ({
-        id: row.category_id,
-        categoryId: row.category_id,
-        name: row.name,
-        type: row.type,
-        splitBy: row.split_by ?? row.splitBy ?? null,
-        sortOrder: row.sort_order ?? row.sortOrder ?? null
-    }));
-}
-
-function serializeBillsFromRows(rows) {
-    if (!Array.isArray(rows) || rows.length === 0) {
-        return [];
-    }
-
-    return rows.map((row) => ({
-        id: row.id,
-        categoryId: row.category_id,
-        name: row.name,
-        type: row.type,
-        amount: row.amount,
-        dueDate: row.due_date,
-        paid: row.paid,
-        sortOrder: row.sort_order ?? row.sortOrder ?? null
-    }));
-}
-
 function composeCategoriesWithBills(categories, bills, legacyCategories) {
     const normalizedCategories = Array.isArray(categories) ? categories : [];
-    const normalizedBills = Array.isArray(bills) ? bills : [];
+    const normalizedBills = serializeBillsFromRows(Array.isArray(bills) ? bills : []);
     const legacy = Array.isArray(legacyCategories) ? legacyCategories : [];
 
     const billsByCategoryId = new Map();
@@ -236,7 +208,9 @@ function composeCategoriesWithBills(categories, bills, legacyCategories) {
             return {
                 ...category,
                 sortOrder: category?.sortOrder ?? index,
-                bills: categoryId ? (billsByCategoryId.get(categoryId) || category.bills || []) : (category.bills || [])
+                bills: categoryId
+                    ? (billsByCategoryId.get(categoryId) || serializeBillsFromRows(category.bills || []))
+                    : serializeBillsFromRows(category.bills || [])
             };
         });
     }
