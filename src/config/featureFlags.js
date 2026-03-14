@@ -74,7 +74,7 @@ async function getIdentity(identifier) {
 
     const identityPromise = (async () => {
         try {
-            const data = await makeApiRequest(`identities/?identifier=${identifier}`);
+            const data = await makeApiRequest(`identities?identifier=${identifier}`);
             const identity = Array.isArray(data) ? data[0] : data;
 
             if (identity && featureFlagsCacheTtlSeconds > 0) {
