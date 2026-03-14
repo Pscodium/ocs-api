@@ -11,7 +11,8 @@
     "tests": "npm run load_database && mocha ./test/**.test.js --timeout 180000 --exit",
     "test": "npm run load_database && mocha ./test/before.test.js --timeout 180000 --exit",
     "load_database": "node ./src/utils/scripts/load_database.js",
-    "load_initial": "node ./src/utils/scripts/initial.js"
+    "load_initial": "node ./src/utils/scripts/initial.js",
+    "migrate_month_categories": "node ./src/utils/scripts/migrate_month_categories.js"
   },
   "repository": {
     "type": "git",

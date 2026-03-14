@@ -30,6 +30,18 @@ exports.init = function(app, auth) {
         checkRateLimit('months', 'update'), 
         financial.updateMonth
     );
+    app.put('/months/:monthKey/categories/reorder',
+        auth.sessionOrJwt,
+        requireFeature('financial_months'),
+        checkRateLimit('months', 'update'),
+        financial.reorderMonthCategories
+    );
+    app.put('/months/:monthKey/categories/:categoryId/bills/reorder',
+        auth.sessionOrJwt,
+        requireFeature('financial_months'),
+        checkRateLimit('months', 'update'),
+        financial.reorderCategoryBills
+    );
     app.delete('/months/:monthKey', 
         auth.sessionOrJwt, 
         requireFeature('financial_months'), 

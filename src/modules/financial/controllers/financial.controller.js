@@ -1,5 +1,248 @@
 const db = require('../../../config/sequelize');
+const { randomUUID } = require('crypto');
 const { getIdentity } = require('../../../config/featureFlags');
+
+function parseMonthPayload(rawData) {
+    if (!rawData) {
+        return {};
+    }
+
+    if (typeof rawData === 'string') {
+        try {
+            return JSON.parse(rawData);
+        } catch (error) {
+            return {};
+        }
+    }
+
+    if (typeof rawData === 'object') {
+        return rawData;
+    }
+
+    return {};
+}
+
+function normalizeCategories(categories) {
+    if (!Array.isArray(categories)) {
+        return [];
+    }
+
+    return categories
+        .filter((item) => item && typeof item === 'object')
+        .map((item, index) => ({
+            category_id: item.categoryId || item.id || randomUUID(),
+            legacy_category_id: item.categoryId || item.id || null,
+            name: item.name || item.categoryName || null,
+            type: item.type || null,
+            split_by: item.splitBy ?? null,
+            sort_order: index
+        }));
+}
+
+function flattenLegacyBills(monthData) {
+    if (!monthData || typeof monthData !== 'object') {
+        return [];
+    }
+
+    const topLevelBills = Array.isArray(monthData.bills) ? monthData.bills : [];
+    const categoryBills = Array.isArray(monthData.categories)
+        ? monthData.categories.flatMap((category) => {
+            if (!category || typeof category !== 'object' || !Array.isArray(category.bills)) {
+                return [];
+            }
+
+            return category.bills.map((bill) => ({
+                ...bill,
+                categoryId: bill?.categoryId || category.categoryId || category.id || null,
+                type: bill?.type || category.type || null
+            }));
+        })
+        : [];
+
+    return [...topLevelBills, ...categoryBills].filter((bill) => bill && typeof bill === 'object');
+}
+
+function normalizeBills(bills, monthData, categories) {
+    const legacyToInternalCategoryId = new Map(
+        (Array.isArray(categories) ? categories : [])
+            .filter((category) => category.legacy_category_id)
+            .map((category) => [category.legacy_category_id, category.category_id])
+    );
+
+    const legacyCategoryType = new Map(
+        (Array.isArray(categories) ? categories : [])
+            .filter((category) => category.legacy_category_id)
+            .map((category) => [category.legacy_category_id, category.type])
+    );
+
+    const sourceBills = Array.isArray(bills) ? bills : flattenLegacyBills(monthData);
+    const sortCounterByCategory = new Map();
+
+    return sourceBills
+        .filter((item) => item && typeof item === 'object')
+        .map((item) => {
+            const categoryId = legacyToInternalCategoryId.get(item.categoryId || item.category_id || null) || null;
+            const counterKey = categoryId || '__unassigned__';
+            const currentSort = sortCounterByCategory.get(counterKey) || 0;
+            sortCounterByCategory.set(counterKey, currentSort + 1);
+
+            return {
+                id: item.id || randomUUID(),
+                category_id: categoryId,
+                name: item.name || item.title || null,
+                type: item.type || legacyCategoryType.get(item.categoryId || item.category_id || null) || null,
+                amount: item.amount ?? item.value ?? null,
+                due_date: item.dueDate || item.date || null,
+                paid: Boolean(item.paid),
+                sort_order: currentSort
+            };
+        });
+}
+
+function hasBillsWithoutCategory(bills) {
+    return Array.isArray(bills) && bills.some((bill) => !bill.category_id);
+}
+
+async function replaceMonthCategories({ userId, monthKey, categories, transaction }) {
+    await db.MonthCategory.destroy({
+        where: {
+            userId: userId,
+            month_key: monthKey
+        },
+        transaction
+    });
+
+    if (!categories.length) {
+        return;
+    }
+
+    const rows = categories.map((category) => ({
+        userId: userId,
+        month_key: monthKey,
+        category_id: category.category_id,
+        name: category.name,
+        type: category.type,
+        split_by: category.split_by,
+        sort_order: category.sort_order
+    }));
+
+    await db.MonthCategory.bulkCreate(rows, { transaction });
+}
+
+async function replaceMonthBills({ userId, monthKey, bills, transaction }) {
+    await db.MonthBill.destroy({
+        where: {
+            userId: userId,
+            month_key: monthKey
+        },
+        transaction
+    });
+
+    if (!bills.length) {
+        return;
+    }
+
+    const rows = bills.map((bill) => ({
+        id: bill.id,
+        userId: userId,
+        month_key: monthKey,
+        category_id: bill.category_id,
+        name: bill.name,
+        type: bill.type,
+        amount: bill.amount,
+        due_date: bill.due_date,
+        paid: bill.paid,
+        sort_order: bill.sort_order
+    }));
+
+    await db.MonthBill.bulkCreate(rows, { transaction });
+}
+
+function serializeCategoriesFromRows(rows) {
+    if (!Array.isArray(rows) || rows.length === 0) {
+        return [];
+    }
+
+    return rows.map((row) => ({
+        id: row.category_id,
+        categoryId: row.category_id,
+        name: row.name,
+        type: row.type,
+        splitBy: row.split_by ?? row.splitBy ?? null,
+        sortOrder: row.sort_order ?? row.sortOrder ?? null
+    }));
+}
+
+function serializeBillsFromRows(rows) {
+    if (!Array.isArray(rows) || rows.length === 0) {
+        return [];
+    }
+
+    return rows.map((row) => ({
+        id: row.id,
+        categoryId: row.category_id,
+        name: row.name,
+        type: row.type,
+        amount: row.amount,
+        dueDate: row.due_date,
+        paid: row.paid,
+        sortOrder: row.sort_order ?? row.sortOrder ?? null
+    }));
+}
+
+function composeCategoriesWithBills(categories, bills, legacyCategories) {
+    const normalizedCategories = Array.isArray(categories) ? categories : [];
+    const normalizedBills = Array.isArray(bills) ? bills : [];
+    const legacy = Array.isArray(legacyCategories) ? legacyCategories : [];
+
+    const billsByCategoryId = new Map();
+    normalizedBills.forEach((bill) => {
+        const categoryId = bill.categoryId || bill.category_id;
+        if (!categoryId) {
+            return;
+        }
+
+        if (!billsByCategoryId.has(categoryId)) {
+            billsByCategoryId.set(categoryId, []);
+        }
+
+        billsByCategoryId.get(categoryId).push(bill);
+    });
+
+    if (normalizedCategories.length > 0) {
+        return normalizedCategories.map((category, index) => {
+            const categoryId = category.id || category.categoryId || category.category_id;
+            const sortOrder = category.sortOrder ?? category.sort_order ?? index;
+            const payload = {
+                id: categoryId,
+                name: category.name || category.categoryName || null,
+                type: category.type || null,
+                sortOrder,
+                bills: categoryId ? (billsByCategoryId.get(categoryId) || []) : []
+            };
+
+            const splitBy = category.splitBy ?? category.split_by;
+            if (splitBy !== null && splitBy !== undefined) {
+                payload.splitBy = splitBy;
+            }
+
+            return payload;
+        });
+    }
+
+    if (legacy.length > 0) {
+        return legacy.map((category, index) => {
+            const categoryId = category?.id || category?.categoryId;
+            return {
+                ...category,
+                sortOrder: category?.sortOrder ?? index,
+                bills: categoryId ? (billsByCategoryId.get(categoryId) || category.bills || []) : (category.bills || [])
+            };
+        });
+    }
+
+    return [];
+}
 
 /**
  * 
@@ -11,6 +254,12 @@ exports.createMonth = async function(req, res) {
     try {
         const userId = req.userId
         const monthData = req.body;
+        const normalizedCategories = normalizeCategories(monthData.categories);
+        const normalizedBills = normalizeBills(monthData.bills, monthData, normalizedCategories);
+
+        if (hasBillsWithoutCategory(normalizedBills)) {
+            return res.status(400).json({ error: 'Todo bill deve estar associado a uma categoria válida' });
+        }
 
         if (!monthData.monthKey) {
             return res.status(400).json({ error: 'monthKey é obrigatório' });
@@ -32,13 +281,47 @@ exports.createMonth = async function(req, res) {
             return res.status(204).json({ message: 'Mês já existe' });
         }
 
-        await db.Month.create({
-            month_key: monthData.monthKey,
-            data: JSON.stringify(monthData),
-            userId: userId
+        const month = await db.sequelize.transaction(async (transaction) => {
+            const created = await db.Month.create({
+                month_key: monthData.monthKey,
+                userId: userId
+            }, { transaction });
+
+            await replaceMonthCategories({
+                userId,
+                monthKey: monthData.monthKey,
+                categories: normalizedCategories,
+                transaction
+            });
+
+            await replaceMonthBills({
+                userId,
+                monthKey: monthData.monthKey,
+                bills: normalizedBills,
+                transaction
+            });
+
+            return created;
         });
 
-        return res.status(201).json(monthData);
+        const responseCategories = composeCategoriesWithBills(
+            serializeCategoriesFromRows(normalizedCategories),
+            normalizedBills.map((bill) => ({
+                id: bill.id,
+                categoryId: bill.category_id,
+                name: bill.name,
+                type: bill.type,
+                amount: bill.amount,
+                dueDate: bill.due_date,
+                paid: bill.paid
+            })),
+            monthData.categories
+        );
+
+        return res.status(201).json({
+            monthKey: month.month_key,
+            categories: responseCategories
+        });
     } catch (e) {
         console.error(e);
         return res.sendStatus(500);
@@ -58,6 +341,34 @@ exports.getMonths = async function(req, res) {
         const [results] = await db.sequelize.query(
             `SELECT
                 M.*,
+                (
+                    SELECT JSON_ARRAYAGG(JSON_OBJECT(
+                    'id', C.CATEGORYID,
+                    'categoryId', C.CATEGORYID,
+                    'name', C.NAME,
+                    'type', C.TYPE,
+                    'splitBy', C.SPLITBY,
+                    'sortOrder', C.SORTORDER
+                    ))
+                    FROM month_categories C
+                    WHERE C.MONTHKEY = M.MONTHKEY AND C.USERID = M.USERID
+                    ORDER BY C.SORTORDER ASC
+                ) AS categories,
+                (
+                    SELECT JSON_ARRAYAGG(JSON_OBJECT(
+                    'id', MB.ID,
+                    'categoryId', MB.CATEGORYID,
+                    'name', MB.NAME,
+                    'type', MB.TYPE,
+                    'amount', MB.AMOUNT,
+                    'dueDate', MB.DUEDATE,
+                    'paid', MB.PAID,
+                    'sortOrder', MB.SORTORDER
+                    ))
+                    FROM month_bills MB
+                    WHERE MB.MONTHKEY = M.MONTHKEY AND MB.USERID = M.USERID
+                    ORDER BY MB.SORTORDER ASC
+                ) AS bills,
                 (
                     SELECT JSON_ARRAYAGG(JSON_OBJECT(
                     'id', B.ID,
@@ -120,13 +431,24 @@ exports.getMonths = async function(req, res) {
         }
 
         const months = results.map(row => {
-            const parsedData = typeof row.data === 'string' ? JSON.parse(row.data) : row.data;
-            parsedData.budgets = row.budgets;
-            parsedData.investments = row.investments;
-            parsedData.goals = row.goals;
-            parsedData.subscriptions = row.subscriptions;
+            const parsedData = parseMonthPayload(row.data);
+            const parsedCategories = parseMonthPayload(row.categories);
+            const parsedBills = parseMonthPayload(row.bills);
+            const { bills: _legacyBills, ...monthBasePayload } = parsedData;
 
-            return parsedData;
+            return {
+                ...monthBasePayload,
+                monthKey: row.monthKey || row.MONTHKEY || row.monthkey || parsedData.monthKey,
+                categories: composeCategoriesWithBills(
+                    Array.isArray(parsedCategories) ? parsedCategories : [],
+                    Array.isArray(parsedBills) ? parsedBills : (parsedData.bills || flattenLegacyBills(parsedData)),
+                    parsedData.categories || []
+                ),
+                budgets: row.budgets,
+                investments: row.investments,
+                goals: row.goals,
+                subscriptions: row.subscriptions
+            };
         });
 
         return res.json(months);
@@ -147,19 +469,13 @@ exports.updateMonth = async function(req, res) {
         const userId = req.userId
         const { monthKey } = req.params
         const monthData = req.body;
+        const hasCategoriesPayload = Array.isArray(monthData.categories);
+        const hasBillsPayload = Array.isArray(monthData.bills) || (Array.isArray(monthData.categories) && monthData.categories.some((item) => Array.isArray(item?.bills)));
+        const normalizedCategories = normalizeCategories(monthData.categories);
+        const normalizedBills = normalizeBills(monthData.bills, monthData, normalizedCategories);
 
-        const result = await db.Month.update(
-            { data: JSON.stringify(monthData) },
-            {
-                where: {
-                    month_key: monthKey,
-                    userId: userId
-                }
-            }
-        );
-
-        if (result.length === 0) {
-            return res.status(404).json({ error: 'Mês não encontrado' });
+        if (hasBillsPayload && hasBillsWithoutCategory(normalizedBills)) {
+            return res.status(400).json({ error: 'Todo bill deve estar associado a uma categoria válida' });
         }
 
         const month = await db.Month.findOne({
@@ -169,7 +485,255 @@ exports.updateMonth = async function(req, res) {
             }
         });
 
-        return res.json(JSON.parse(month.data));
+        if (!month) {
+            return res.status(404).json({ error: 'Mês não encontrado' });
+        }
+
+        if (hasCategoriesPayload) {
+            await db.sequelize.transaction(async (transaction) => {
+                await replaceMonthCategories({
+                    userId,
+                    monthKey,
+                    categories: normalizedCategories,
+                    transaction
+                });
+            });
+        }
+
+        if (hasBillsPayload) {
+            await db.sequelize.transaction(async (transaction) => {
+                await replaceMonthBills({
+                    userId,
+                    monthKey,
+                    bills: normalizedBills,
+                    transaction
+                });
+            });
+        }
+
+        const categories = await db.MonthCategory.findAll({
+            where: {
+                userId: userId,
+                month_key: monthKey
+            },
+            order: [['sort_order', 'ASC'], ['createdAt', 'ASC']]
+        });
+        const bills = await db.MonthBill.findAll({
+            where: {
+                userId: userId,
+                month_key: monthKey
+            },
+            order: [['category_id', 'ASC'], ['sort_order', 'ASC'], ['createdAt', 'ASC']]
+        });
+
+        const legacyPayload = parseMonthPayload(month.data);
+        const { bills: _legacyBills, ...monthBasePayload } = legacyPayload;
+        const categoriesPayload = serializeCategoriesFromRows(categories);
+        const billsPayload = serializeBillsFromRows(bills);
+
+        return res.json({
+            ...monthBasePayload,
+            monthKey,
+            categories: composeCategoriesWithBills(
+                categoriesPayload,
+                billsPayload,
+                legacyPayload.categories || []
+            )
+        });
+    } catch (e) {
+        console.error(e);
+        return res.sendStatus(500);
+    }
+}
+
+/**
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @returns
+ */
+exports.reorderMonthCategories = async function(req, res) {
+    try {
+        const userId = req.userId;
+        const { monthKey } = req.params;
+        const { orderedCategoryIds } = req.body;
+
+        if (!Array.isArray(orderedCategoryIds) || orderedCategoryIds.length === 0) {
+            return res.status(400).json({ error: 'orderedCategoryIds deve ser um array não vazio' });
+        }
+
+        const normalizedIds = orderedCategoryIds
+            .filter((id) => typeof id === 'string')
+            .map((id) => id.trim())
+            .filter(Boolean);
+
+        if (normalizedIds.length !== orderedCategoryIds.length) {
+            return res.status(400).json({ error: 'orderedCategoryIds contém valores inválidos' });
+        }
+
+        const uniqueIds = [...new Set(normalizedIds)];
+        if (uniqueIds.length !== normalizedIds.length) {
+            return res.status(400).json({ error: 'orderedCategoryIds não pode conter IDs duplicados' });
+        }
+
+        const month = await db.Month.findOne({
+            where: {
+                month_key: monthKey,
+                userId: userId
+            }
+        });
+
+        if (!month) {
+            return res.status(404).json({ error: 'Mês não encontrado' });
+        }
+
+        const totalCategories = await db.MonthCategory.count({
+            where: {
+                userId: userId,
+                month_key: monthKey
+            }
+        });
+
+        if (totalCategories !== uniqueIds.length) {
+            return res.status(400).json({ error: 'orderedCategoryIds deve conter todas as categorias do mês' });
+        }
+
+        const foundCategories = await db.MonthCategory.findAll({
+            where: {
+                userId: userId,
+                month_key: monthKey,
+                category_id: uniqueIds
+            },
+            attributes: ['category_id']
+        });
+
+        if (foundCategories.length !== uniqueIds.length) {
+            return res.status(400).json({ error: 'orderedCategoryIds possui categorias inválidas para este mês' });
+        }
+
+        await db.sequelize.transaction(async (transaction) => {
+            await Promise.all(uniqueIds.map((categoryId, index) => db.MonthCategory.update(
+                { sort_order: index },
+                {
+                    where: {
+                        userId: userId,
+                        month_key: monthKey,
+                        category_id: categoryId
+                    },
+                    transaction
+                }
+            )));
+        });
+
+        return res.status(200).json({
+            monthKey,
+            orderedCategoryIds: uniqueIds
+        });
+    } catch (e) {
+        console.error(e);
+        return res.sendStatus(500);
+    }
+}
+
+/**
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @returns
+ */
+exports.reorderCategoryBills = async function(req, res) {
+    try {
+        const userId = req.userId;
+        const { monthKey, categoryId } = req.params;
+        const { orderedBillIds } = req.body;
+
+        if (!Array.isArray(orderedBillIds) || orderedBillIds.length === 0) {
+            return res.status(400).json({ error: 'orderedBillIds deve ser um array não vazio' });
+        }
+
+        const normalizedIds = orderedBillIds
+            .filter((id) => typeof id === 'string')
+            .map((id) => id.trim())
+            .filter(Boolean);
+
+        if (normalizedIds.length !== orderedBillIds.length) {
+            return res.status(400).json({ error: 'orderedBillIds contém valores inválidos' });
+        }
+
+        const uniqueIds = [...new Set(normalizedIds)];
+        if (uniqueIds.length !== normalizedIds.length) {
+            return res.status(400).json({ error: 'orderedBillIds não pode conter IDs duplicados' });
+        }
+
+        const month = await db.Month.findOne({
+            where: {
+                month_key: monthKey,
+                userId: userId
+            }
+        });
+
+        if (!month) {
+            return res.status(404).json({ error: 'Mês não encontrado' });
+        }
+
+        const category = await db.MonthCategory.findOne({
+            where: {
+                userId: userId,
+                month_key: monthKey,
+                category_id: categoryId
+            }
+        });
+
+        if (!category) {
+            return res.status(404).json({ error: 'Categoria não encontrada no mês informado' });
+        }
+
+        const totalBills = await db.MonthBill.count({
+            where: {
+                userId: userId,
+                month_key: monthKey,
+                category_id: categoryId
+            }
+        });
+
+        if (totalBills !== uniqueIds.length) {
+            return res.status(400).json({ error: 'orderedBillIds deve conter todas as contas da categoria' });
+        }
+
+        const foundBills = await db.MonthBill.findAll({
+            where: {
+                userId: userId,
+                month_key: monthKey,
+                category_id: categoryId,
+                id: uniqueIds
+            },
+            attributes: ['id']
+        });
+
+        if (foundBills.length !== uniqueIds.length) {
+            return res.status(400).json({ error: 'orderedBillIds possui contas inválidas para esta categoria' });
+        }
+
+        await db.sequelize.transaction(async (transaction) => {
+            await Promise.all(uniqueIds.map((billId, index) => db.MonthBill.update(
+                { sort_order: index },
+                {
+                    where: {
+                        userId: userId,
+                        month_key: monthKey,
+                        category_id: categoryId,
+                        id: billId
+                    },
+                    transaction
+                }
+            )));
+        });
+
+        return res.status(200).json({
+            monthKey,
+            categoryId,
+            orderedBillIds: uniqueIds
+        });
     } catch (e) {
         console.error(e);
         return res.sendStatus(500);
@@ -186,6 +750,19 @@ exports.deleteMonth = async function(req, res) {
     try {
         const userId = req.userId
         const { monthKey } = req.params
+
+        await db.MonthCategory.destroy({
+            where: {
+                month_key: monthKey,
+                userId: userId
+            }
+        });
+        await db.MonthBill.destroy({
+            where: {
+                month_key: monthKey,
+                userId: userId
+            }
+        });
 
         const result = await db.Month.destroy({
             where: {
@@ -221,7 +798,36 @@ exports.getMonthByKey = async function(req, res) {
             return res.status(404).json({ error: 'Mês não encontrado' });
         }
 
-        return res.json(JSON.parse(month.data));
+        const categories = await db.MonthCategory.findAll({
+            where: {
+                userId: userId,
+                month_key: monthKey
+            },
+            order: [['sort_order', 'ASC'], ['createdAt', 'ASC']]
+        });
+        const bills = await db.MonthBill.findAll({
+            where: {
+                userId: userId,
+                month_key: monthKey
+            },
+            order: [['category_id', 'ASC'], ['sort_order', 'ASC'], ['createdAt', 'ASC']]
+        });
+
+        const legacyPayload = parseMonthPayload(month.data);
+        const { bills: _legacyBills, ...monthBasePayload } = legacyPayload;
+        const categoriesPayload = serializeCategoriesFromRows(categories);
+        const billsPayload = serializeBillsFromRows(bills);
+        const mergedCategories = composeCategoriesWithBills(
+            categoriesPayload,
+            billsPayload,
+            legacyPayload.categories || []
+        );
+
+        return res.json({
+            ...monthBasePayload,
+            monthKey,
+            categories: mergedCategories
+        });
     } catch (e) {
         console.error(e);
         return res.sendStatus(500);
@@ -256,7 +862,7 @@ exports.getBudgets = async function(req, res) {
                 userId: userId,
                 month_key: monthKey
             },
-            order: [['created_at', 'ASC']]
+            order: [['createdAt', 'ASC']]
         });
 
         return res.json(budgets);
@@ -400,7 +1006,7 @@ exports.getInvestments = async function(req, res) {
                 userId: userId,
                 month_key: monthKey
             },
-            order: [['created_at', 'ASC']]
+            order: [['createdAt', 'ASC']]
         });
 
         return res.json(investments);
@@ -556,7 +1162,7 @@ exports.getGoals = async function(req, res) {
                 userId: userId,
                 month_key: monthKey
             },
-            order: [['created_at', 'ASC']]
+            order: [['createdAt', 'ASC']]
         });
 
         return res.json(goals);
@@ -706,7 +1312,7 @@ exports.getSubscriptions = async function(req, res) {
                 userId: userId,
                 month_key: monthKey
             },
-            order: [['created_at', 'ASC']]
+            order: [['createdAt', 'ASC']]
         });
 
         return res.json(subscriptions);
