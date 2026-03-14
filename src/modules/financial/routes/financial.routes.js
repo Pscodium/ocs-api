@@ -149,6 +149,6 @@ exports.init = function(app, auth) {
         });
     });
 
-    // Identity endpoint - Get full Flagsmith identity (flags + traits) for the user's plan
+    // Identity endpoint - Get full feature flag identity (flags + traits) for the user's plan
     app.get('/identity', auth.sessionOrJwt, financial.getPlanIdentity);
 };

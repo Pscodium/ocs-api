@@ -1,22 +1,22 @@
 require('dotenv').config();
 const redis = require('./redis');
 
-const flagsmithApiUrl = process.env.FLAGSMITH_API_URL || 'http://localhost:8000/api/v1/';
-const flagsmithEnvironmentKey = process.env.FLAGSMITH_ENVIRONMENT_KEY;
-const flagsmithCacheTtlSeconds = parseInt(process.env.FLAGSMITH_CACHE_TTL_SECONDS || '60', 10);
-const flagsmithCachePrefix = process.env.FLAGSMITH_CACHE_PREFIX || 'flagsmith:identity:';
+const featureFlagsApiUrl = process.env.FEATURE_FLAGS_API_URL || 'http://localhost:8000/api/v1/';
+const featureFlagsEnvironmentKey = process.env.FEATURE_FLAGS_ENVIRONMENT_KEY;
+const featureFlagsCacheTtlSeconds = parseInt(process.env.FEATURE_FLAGS_CACHE_TTL_SECONDS || '60', 10);
+const featureFlagsCachePrefix = process.env.FEATURE_FLAGS_CACHE_PREFIX || 'feature-flags:identity:';
 const inFlightIdentityRequests = new Map();
 
-if (!flagsmithEnvironmentKey) {
-    console.warn('⚠️  FLAGSMITH_ENVIRONMENT_KEY não foi configurada no .env');
+if (!featureFlagsEnvironmentKey) {
+    console.warn('FEATURE_FLAGS_ENVIRONMENT_KEY nao foi configurada no .env');
 }
 
 function getIdentityCacheKey(identifier) {
-    return `${flagsmithCachePrefix}${identifier}`;
+    return `${featureFlagsCachePrefix}${identifier}`;
 }
 
 /**
- * Make a request to Flagsmith API
+ * Make a request to the feature flags API
  * @param {string} endpoint - API endpoint
  * @param {string} method - HTTP method
  * @param {Object} body - Request body
@@ -24,11 +24,11 @@ function getIdentityCacheKey(identifier) {
  */
 async function makeApiRequest(endpoint, method = 'GET', body = null) {
     try {
-        const url = `${flagsmithApiUrl}${endpoint}`;
+        const url = `${featureFlagsApiUrl}${endpoint}`;
         const options = {
             method,
             headers: {
-                'X-Environment-Key': flagsmithEnvironmentKey,
+                'X-Environment-Key': featureFlagsEnvironmentKey,
                 'Content-Type': 'application/json'
             }
         };
@@ -45,7 +45,7 @@ async function makeApiRequest(endpoint, method = 'GET', body = null) {
 
         return await response.json();
     } catch (error) {
-        console.error(`Erro na requisição para Flagsmith:`, error);
+        console.error('Erro na requisicao para a API de feature flags:', error);
         throw error;
     }
 }
@@ -77,9 +77,9 @@ async function getIdentity(identifier) {
             const data = await makeApiRequest(`identities/?identifier=${identifier}`);
             const identity = Array.isArray(data) ? data[0] : data;
 
-            if (identity && flagsmithCacheTtlSeconds > 0) {
+            if (identity && featureFlagsCacheTtlSeconds > 0) {
                 try {
-                    await redis.setEx(cacheKey, flagsmithCacheTtlSeconds, JSON.stringify(identity));
+                    await redis.setEx(cacheKey, featureFlagsCacheTtlSeconds, JSON.stringify(identity));
                 } catch (error) {
                     console.warn(`Aviso: falha ao salvar cache Redis para ${identifier}:`, error.message);
                 }
@@ -87,7 +87,7 @@ async function getIdentity(identifier) {
 
             return identity;
         } catch (error) {
-            console.error('Erro ao buscar identity do Flagsmith:', error);
+            console.error('Erro ao buscar identity da API de feature flags:', error);
             throw error;
         } finally {
             inFlightIdentityRequests.delete(cacheKey);
@@ -119,7 +119,7 @@ async function invalidateIdentityCache(identifier) {
 async function hasFeature(identifier, featureName) {
     try {
         const identity = await getIdentity(identifier);
-        
+
         if (!identity || !identity.flags) {
             return false;
         }
@@ -141,7 +141,7 @@ async function hasFeature(identifier, featureName) {
 async function getTrait(identifier, traitKey) {
     try {
         const identity = await getIdentity(identifier);
-        
+
         if (!identity || !identity.traits) {
             return null;
         }
@@ -163,7 +163,7 @@ async function getTrait(identifier, traitKey) {
 async function getFeatureValue(identifier, featureName) {
     try {
         const identity = await getIdentity(identifier);
-        
+
         if (!identity || !identity.flags) {
             return null;
         }
@@ -184,7 +184,7 @@ async function getFeatureValue(identifier, featureName) {
 async function getAllFeaturesAndTraits(identifier) {
     try {
         const identity = await getIdentity(identifier);
-        
+
         if (!identity) {
             return { flags: [], traits: [] };
         }
@@ -194,7 +194,7 @@ async function getAllFeaturesAndTraits(identifier) {
             traits: identity.traits || []
         };
     } catch (error) {
-        console.error(`Erro ao buscar todas as features:`, error);
+        console.error('Erro ao buscar todas as features:', error);
         return { flags: [], traits: [] };
     }
 }

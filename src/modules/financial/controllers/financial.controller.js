@@ -1,5 +1,5 @@
 const db = require('../../../config/sequelize');
-const { getIdentity } = require('../../../config/flagsmith');
+const { getIdentity } = require('../../../config/featureFlags');
 
 /**
  * 

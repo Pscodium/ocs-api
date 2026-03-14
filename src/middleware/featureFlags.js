@@ -1,4 +1,4 @@
-const { hasFeature, getTrait, getAllFeaturesAndTraits } = require('../config/flagsmith');
+const { hasFeature, getTrait, getAllFeaturesAndTraits } = require('../config/featureFlags');
 const redis = require('../config/redis');
 
 /**
