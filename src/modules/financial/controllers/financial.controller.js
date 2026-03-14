@@ -1,4 +1,5 @@
 const db = require('../../../config/sequelize');
+const { getIdentity } = require('../../../config/flagsmith');
 
 /**
  * 
@@ -839,6 +840,27 @@ exports.deleteSubscription = async function(req, res) {
         }
 
         return res.status(204).send();
+    } catch (e) {
+        console.error(e);
+        return res.sendStatus(500);
+    }
+}
+
+exports.getPlanIdentity = async function(req, res) {
+    try {
+        const userPlan = req.auth?.plan;
+
+        if (!userPlan) {
+            return res.status(403).json({ error: 'User plan not found in token' });
+        }
+
+        const identity = await getIdentity(userPlan);
+
+        if (!identity) {
+            return res.status(404).json({ error: 'Identity not found for plan', plan: userPlan });
+        }
+
+        return res.status(200).json(identity);
     } catch (e) {
         console.error(e);
         return res.sendStatus(500);

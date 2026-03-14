@@ -148,4 +148,7 @@ exports.init = function(app, auth) {
             features: req.features || {}
         });
     });
+
+    // Identity endpoint - Get full Flagsmith identity (flags + traits) for the user's plan
+    app.get('/identity', auth.sessionOrJwt, financial.getPlanIdentity);
 };

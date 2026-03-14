@@ -1,10 +1,18 @@
 require('dotenv').config();
+const redis = require('./redis');
 
 const flagsmithApiUrl = process.env.FLAGSMITH_API_URL || 'http://localhost:8000/api/v1/';
 const flagsmithEnvironmentKey = process.env.FLAGSMITH_ENVIRONMENT_KEY;
+const flagsmithCacheTtlSeconds = parseInt(process.env.FLAGSMITH_CACHE_TTL_SECONDS || '60', 10);
+const flagsmithCachePrefix = process.env.FLAGSMITH_CACHE_PREFIX || 'flagsmith:identity:';
+const inFlightIdentityRequests = new Map();
 
 if (!flagsmithEnvironmentKey) {
     console.warn('⚠️  FLAGSMITH_ENVIRONMENT_KEY não foi configurada no .env');
+}
+
+function getIdentityCacheKey(identifier) {
+    return `${flagsmithCachePrefix}${identifier}`;
 }
 
 /**
@@ -48,17 +56,57 @@ async function makeApiRequest(endpoint, method = 'GET', body = null) {
  * @returns {Promise<Object>} - Identity data with flags and traits
  */
 async function getIdentity(identifier) {
+    const cacheKey = getIdentityCacheKey(identifier);
+
     try {
-        const data = await makeApiRequest(`identities/?identifier=${identifier}`);
-        // Se retornar um array, pegar o primeiro item
-        if (Array.isArray(data)) {
-            return data[0];
+        const cachedIdentity = await redis.get(cacheKey);
+
+        if (cachedIdentity) {
+            return JSON.parse(cachedIdentity);
         }
-        
-        return data;
     } catch (error) {
-        console.error('Erro ao buscar identity do Flagsmith:', error);
-        throw error;
+        console.warn(`Aviso: falha ao ler cache Redis para ${identifier}:`, error.message);
+    }
+
+    if (inFlightIdentityRequests.has(cacheKey)) {
+        return inFlightIdentityRequests.get(cacheKey);
+    }
+
+    const identityPromise = (async () => {
+        try {
+            const data = await makeApiRequest(`identities/?identifier=${identifier}`);
+            const identity = Array.isArray(data) ? data[0] : data;
+
+            if (identity && flagsmithCacheTtlSeconds > 0) {
+                try {
+                    await redis.setEx(cacheKey, flagsmithCacheTtlSeconds, JSON.stringify(identity));
+                } catch (error) {
+                    console.warn(`Aviso: falha ao salvar cache Redis para ${identifier}:`, error.message);
+                }
+            }
+
+            return identity;
+        } catch (error) {
+            console.error('Erro ao buscar identity do Flagsmith:', error);
+            throw error;
+        } finally {
+            inFlightIdentityRequests.delete(cacheKey);
+        }
+    })();
+
+    inFlightIdentityRequests.set(cacheKey, identityPromise);
+    return identityPromise;
+}
+
+/**
+ * Remove identity from cache
+ * @param {string} identifier - Identity identifier
+ */
+async function invalidateIdentityCache(identifier) {
+    try {
+        await redis.del(getIdentityCacheKey(identifier));
+    } catch (error) {
+        console.warn(`Aviso: falha ao invalidar cache Redis para ${identifier}:`, error.message);
     }
 }
 
@@ -157,5 +205,6 @@ module.exports = {
     getTrait,
     getFeatureValue,
     getAllFeaturesAndTraits,
-    makeApiRequest
+    makeApiRequest,
+    invalidateIdentityCache
 };
