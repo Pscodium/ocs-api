@@ -11,8 +11,7 @@
     "tests": "npm run load_database && mocha ./test/**.test.js --timeout 180000 --exit",
     "test": "npm run load_database && mocha ./test/before.test.js --timeout 180000 --exit",
     "load_database": "node ./src/utils/scripts/load_database.js",
-    "load_initial": "node ./src/utils/scripts/initial.js",
-    "migrate_month_categories": "node ./src/utils/scripts/migrate_month_categories.js"
+    "load_initial": "node ./src/utils/scripts/initial.js"
   },
   "repository": {
     "type": "git",
@@ -43,10 +42,8 @@
     "sequelize": "^6.32.1"
   },
   "dependencies": {
-    "bcrypt": "^5.1.1",
     "bcryptjs": "^2.4.3",
     "chalk": "^3.0.0",
-    "cookie": "^0.6.0",
     "cookie-parser": "^1.4.6",
     "jose": "^5.9.3",
     "jsonwebtoken": "^9.0.2",
