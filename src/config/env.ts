@@ -3,9 +3,9 @@ import { z } from 'zod';
 
 /**
  * Typed, validated environment. Fails fast at boot when required vars are missing.
- * Port vars for the per-module servers (SHORTEN_PORT/FINANCIAL_PORT/PRODUCT_FINDER_PORT)
- * are intentionally NOT modeled here — they go away when the app is consolidated onto a
- * single port (see docs/refactor-typescript.md §3, §8 step 7).
+ * FINANCIAL_PORT/PRODUCT_FINDER_PORT are consolidated onto API_PORT and not modeled.
+ * SHORTEN_PORT is kept: shorten runs on its own server so its GET /:code catch-all
+ * cannot shadow other modules' routes (see docs/refactor-typescript.md §3, §8 step 7).
  */
 const csv = (raw?: string): string[] =>
     raw ? raw.split(',').map((s) => s.trim()).filter(Boolean) : [];
@@ -14,6 +14,8 @@ const schema = z.object({
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
 
     API_PORT: z.coerce.number().int().positive(),
+    /** Dedicated port for the shorten server (isolates the GET /:code catch-all). */
+    SHORTEN_PORT: z.coerce.number().int().positive().default(4000),
 
     CORS_ORIGIN: z.string().optional().transform(csv),
     DISABLED_LOGS: z

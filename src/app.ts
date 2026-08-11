@@ -21,6 +21,10 @@ import { storageModule } from './modules/storage/storage.module';
  * Migration state: all modules are native TS. shorten + finder are fully ported
  * (service/repository); core + financial are TS shells whose legacy controllers
  * run via typed interop facades, split into service/repository incrementally.
+ *
+ * Shorten is the ONE exception to single-port: it runs on its own server
+ * (createShortenApp, SHORTEN_PORT) because its GET /:code catch-all would
+ * otherwise swallow every other module's routes.
  */
 export function createApp(deps: AppDeps): Express {
     const app = express();
@@ -35,7 +39,8 @@ export function createApp(deps: AppDeps): Express {
     }
 
     // --- Modules. Order matters: core owns shared root paths (/check/auth);
-    // financial/finder expose legacy root aliases; shorten catch-all is mounted LAST.
+    // financial/finder expose legacy root aliases. Shorten runs on its own server
+    // (createShortenApp) so its GET /:code catch-all can't shadow these.
     const modules: AppModule[] = [
         // Core: ONLY /check/auth. Owns the shared root path — mount FIRST (docs §3.2).
         coreModule,
@@ -51,13 +56,37 @@ export function createApp(deps: AppDeps): Express {
 
     registerModules(app, modules, deps);
 
-    // --- Shorten legacy root aliases, mounted LAST so GET /:code (catch-all)
-    // cannot swallow any earlier route (docs §5).
+    // --- Error handling (must be last).
+    app.use(notFoundHandler);
+    app.use(errorHandler(!config.DISABLED_LOGS));
+
+    return app;
+}
+
+/**
+ * Dedicated shorten server (SHORTEN_PORT). Same global middleware as the main app,
+ * plus the canonical '/shorten' module and the legacy root aliases (POST /shorten,
+ * GET /user/urls, DELETE /user/url/:code, GET /:code). The GET /:code catch-all is
+ * registered LAST and, being on its own port, cannot collide with other modules.
+ */
+export function createShortenApp(deps: AppDeps): Express {
+    const app = express();
+    const { config } = deps;
+
+    app.use(express.json());
+    app.use(cookieParser());
+    app.use(cors({ origin: config.CORS_ORIGIN, credentials: true }));
+    if (!config.DISABLED_LOGS) {
+        app.use(logs);
+    }
+
+    registerModules(app, [shortenModule], deps);
+
+    // Legacy root aliases (incl. GET /:code catch-all) — mounted LAST.
     const shortenLegacy = Router();
     registerShortenLegacyRoutes(shortenLegacy, buildShortenController(deps));
     app.use(shortenLegacy);
 
-    // --- Error handling (must be last).
     app.use(notFoundHandler);
     app.use(errorHandler(!config.DISABLED_LOGS));
 
