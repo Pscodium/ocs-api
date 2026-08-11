@@ -1,0 +1,257 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+/// articles + tags (belongsToMany through article_tags)
+model Articles {
+  id        String       @id @default(uuid()) @db.Char(36)
+  userId    String?      @map("userId")
+  title     String       @db.VarChar(255)
+  body      String       @db.Text
+  files     Json?
+  createdAt DateTime     @default(now()) @db.DateTime(0)
+  updatedAt DateTime     @updatedAt @db.DateTime(0)
+  tags      ArticleTag[]
+
+  @@map("articles")
+}
+
+model Tags {
+  id        String       @id @default(uuid()) @db.Char(36)
+  title     String       @db.VarChar(255)
+  count     Int?         @default(0)
+  views     Int          @default(0)
+  hex       String       @default("#000000") @db.VarChar(255)
+  createdAt DateTime     @default(now()) @db.DateTime(0)
+  updatedAt DateTime     @updatedAt @db.DateTime(0)
+  articles  ArticleTag[]
+
+  @@map("tags")
+}
+
+/// explicit join table for Articles<->Tags (Sequelize `article_tags`)
+model ArticleTag {
+  createdAt DateTime @default(now()) @db.DateTime(0)
+  updatedAt DateTime @updatedAt @db.DateTime(0)
+  ArticleId String   @db.Char(36)
+  TagId     String   @db.Char(36)
+  article   Articles @relation(fields: [ArticleId], references: [id], onDelete: Cascade, map: "article_tags_ibfk_1")
+  tag       Tags     @relation(fields: [TagId], references: [id], onDelete: Cascade, map: "article_tags_ibfk_2")
+
+  @@id([ArticleId, TagId])
+  @@index([TagId], map: "TagId")
+  @@map("article_tags")
+}
+
+model Files {
+  id        String       @id @default(uuid()) @db.Char(36)
+  userId    String?      @map("userId")
+  name      String?      @db.VarChar(255)
+  url       String       @db.Text
+  type      String       @db.VarChar(255)
+  private   Boolean?     @default(false)
+  createdAt DateTime     @default(now()) @db.DateTime(0)
+  updatedAt DateTime     @updatedAt @db.DateTime(0)
+  folders   FileFolder[]
+
+  @@map("files")
+}
+
+model Folder {
+  id        String       @id @default(uuid()) @db.Char(36)
+  userId    String?      @map("userId")
+  name      String?      @db.VarChar(255)
+  type      String?      @db.VarChar(255)
+  hex       String       @db.VarChar(255)
+  private   Boolean?     @default(false)
+  createdAt DateTime     @default(now()) @db.DateTime(0)
+  updatedAt DateTime     @updatedAt @db.DateTime(0)
+  files     FileFolder[]
+
+  @@map("folder")
+}
+
+/// explicit join table for Files<->Folder (Sequelize `file_folders`)
+model FileFolder {
+  createdAt DateTime @default(now()) @db.DateTime(0)
+  updatedAt DateTime @updatedAt @db.DateTime(0)
+  FileId    String   @db.Char(36)
+  FolderId  String   @db.Char(36)
+  file      Files    @relation(fields: [FileId], references: [id], onDelete: Cascade, map: "file_folders_ibfk_1")
+  folder    Folder   @relation(fields: [FolderId], references: [id], onDelete: Cascade, map: "file_folders_ibfk_2")
+
+  @@id([FileId, FolderId])
+  @@index([FolderId], map: "FolderId")
+  @@map("file_folders")
+}
+
+model Establishments {
+  id          String                  @id @default(uuid()) @db.Char(36)
+  name        String                  @db.VarChar(255)
+  latitude    Decimal                 @db.Decimal(10, 7)
+  longitude   Decimal                 @db.Decimal(10, 7)
+  category    String                  @db.VarChar(255)
+  description String                  @db.Text
+  address     String                  @db.VarChar(255)
+  createdAt   DateTime                @default(now()) @db.DateTime(0)
+  updatedAt   DateTime                @updatedAt @db.DateTime(0)
+  products    EstablishmentProducts[]
+
+  @@index([category], map: "establishments_category")
+  @@index([latitude, longitude], map: "establishments_latitude_longitude")
+  @@map("establishments")
+}
+
+model EstablishmentProducts {
+  id              String         @id @default(uuid()) @db.Char(36)
+  establishmentId String         @map("establishmentId") @db.Char(36)
+  name            String         @db.VarChar(255)
+  description     String         @db.Text
+  category        String         @db.VarChar(255)
+  stock           Int?
+  createdAt       DateTime       @default(now()) @db.DateTime(0)
+  updatedAt       DateTime       @updatedAt @db.DateTime(0)
+  establishment   Establishments @relation(fields: [establishmentId], references: [id], onDelete: Cascade, map: "establishment_products_ibfk_1")
+
+  @@index([category], map: "establishment_products_category")
+  @@index([establishmentId], map: "establishment_products_establishment_id")
+  @@index([stock], map: "establishment_products_stock")
+  @@map("establishment_products")
+}
+
+model Month {
+  id        String   @id @default(uuid()) @db.Char(36)
+  userId    String?  @map("userId")
+  month_key String   @map("monthKey") @db.VarChar(7)
+  data      Json?
+  createdAt DateTime @default(now()) @db.DateTime(0)
+  updatedAt DateTime @updatedAt @db.DateTime(0)
+
+  @@map("month")
+}
+
+model MonthBill {
+  id          String    @id @db.VarChar(100)
+  userId      String?   @map("userId")
+  month_key   String    @map("monthKey") @db.VarChar(7)
+  category_id String?   @map("categoryId") @db.VarChar(100)
+  name        String?
+  type        String?   @db.VarChar(50)
+  amount      Decimal?  @db.Decimal(10, 2)
+  due_date    DateTime? @map("dueDate") @db.Date
+  paid        Boolean   @default(false)
+  createdAt   DateTime  @default(now()) @db.DateTime(0)
+  updatedAt   DateTime  @updatedAt @db.DateTime(0)
+  sort_order  Int?      @map("sortOrder")
+
+  @@index([userId, month_key], map: "month_bills_user_id_month_key")
+  @@index([userId, month_key, category_id], map: "month_bills_user_id_month_key_category_id")
+  @@map("month_bills")
+}
+
+model MonthCategory {
+  id          String   @id @default(uuid()) @db.Char(36)
+  userId      String?  @map("userId")
+  month_key   String   @map("monthKey") @db.VarChar(7)
+  category_id String?  @map("categoryId") @db.VarChar(100)
+  name        String?
+  type        String?  @db.VarChar(50)
+  split_by    Int?     @map("splitBy")
+  createdAt   DateTime @default(now()) @db.DateTime(0)
+  updatedAt   DateTime @updatedAt @db.DateTime(0)
+  sort_order  Int?     @map("sortOrder")
+
+  @@index([userId, month_key], map: "month_categories_user_id_month_key")
+  @@map("month_categories")
+}
+
+model Budget {
+  id            String   @id @db.VarChar(50)
+  userId        String?  @map("userId")
+  month_key     String   @map("monthKey") @db.VarChar(7)
+  category_id   String?  @map("categoryId") @db.VarChar(50)
+  category_name String   @map("categoryName") @db.VarChar(100)
+  limit         Decimal  @db.Decimal(10, 2)
+  spent         Decimal? @default(0.00) @db.Decimal(10, 2)
+  createdAt     DateTime @default(now()) @db.DateTime(0)
+  updatedAt     DateTime @updatedAt @db.DateTime(0)
+
+  @@map("budgets")
+}
+
+model Goal {
+  id             String       @id @db.VarChar(50)
+  userId         String?      @map("userId")
+  month_key      String       @map("monthKey") @db.VarChar(7)
+  name           String       @db.VarChar(200)
+  target_amount  Decimal      @map("targetAmount") @db.Decimal(10, 2)
+  current_amount Decimal?     @default(0.00) @map("currentAmount") @db.Decimal(10, 2)
+  deadline       DateTime?    @db.Date
+  category       GoalCategory
+  createdAt      DateTime     @default(now()) @db.DateTime(0)
+  updatedAt      DateTime     @updatedAt @db.DateTime(0)
+
+  @@map("goals")
+}
+
+model Investment {
+  id            String         @id @db.VarChar(50)
+  userId        String?        @map("userId")
+  month_key     String         @map("monthKey") @db.VarChar(7)
+  name          String         @db.VarChar(200)
+  type          InvestmentType
+  amount        Decimal        @db.Decimal(10, 2)
+  current_value Decimal?       @map("currentValue") @db.Decimal(10, 2)
+  purchase_date DateTime       @map("purchaseDate") @db.Date
+  notes         String?        @db.Text
+  createdAt     DateTime       @default(now()) @db.DateTime(0)
+  updatedAt     DateTime       @updatedAt @db.DateTime(0)
+
+  @@map("investments")
+}
+
+model Subscription {
+  id                String       @id @db.VarChar(50)
+  userId            String?      @map("userId")
+  month_key         String       @map("monthKey") @db.VarChar(7)
+  name              String       @db.VarChar(200)
+  amount            Decimal      @db.Decimal(10, 2)
+  billing_cycle     BillingCycle @map("billingCycle")
+  next_billing_date DateTime     @map("nextBillingDate") @db.Date
+  category          String?      @db.VarChar(100)
+  active            Boolean?     @default(true)
+  notes             String?      @db.Text
+  createdAt         DateTime     @default(now()) @db.DateTime(0)
+  updatedAt         DateTime     @updatedAt @db.DateTime(0)
+
+  @@map("subscriptions")
+}
+
+enum GoalCategory {
+  emergency
+  purchase
+  vacation
+  education
+  retirement
+  other
+}
+
+enum InvestmentType {
+  stocks
+  funds
+  crypto
+  savings
+  real_estate @map("real-estate")
+  other
+}
+
+enum BillingCycle {
+  monthly
+  quarterly
+  yearly
+}

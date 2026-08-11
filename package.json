@@ -4,14 +4,19 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon --watch src --exec node src/index.js",
-    "start": "nodemon --watch src --exec node src/index.js",
-    "build": "npm run load_initial",
-    "lint": "eslint ./src --ext js",
-    "tests": "npm run load_database && mocha ./test/**.test.js --timeout 180000 --exit",
-    "test": "npm run load_database && mocha ./test/before.test.js --timeout 180000 --exit",
-    "load_database": "node ./src/utils/scripts/load_database.js",
-    "load_initial": "node ./src/utils/scripts/initial.js"
+    "dev": "tsx watch src/main.ts",
+    "start": "tsx src/main.ts",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint ./src --ext js,ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:pull": "prisma db pull",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:studio": "prisma studio",
+    "load_initial": "tsx ./src/utils/scripts/initial.ts",
+    "setup:flags": "tsx ./src/utils/scripts/setup_feature_flags.ts"
   },
   "repository": {
     "type": "git",
@@ -31,17 +36,23 @@
     "@types/multer": "^1.4.11",
     "@types/node": "^20.12.7",
     "@types/randomcolor": "^0.5.9",
+    "@types/supertest": "^7.2.1",
     "@types/uuid": "^10.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.67.0",
+    "@typescript-eslint/parser": "^8.67.0",
     "body-parser": "^1.20.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "eslint": "^9.1.1",
     "express": "^4.19.2",
-    "mysql2": "^3.9.7",
     "nodemon": "^3.1.0",
-    "sequelize": "^6.32.1"
+    "prisma": "^6.19.3",
+    "supertest": "^7.2.2",
+    "tsx": "^4.23.12",
+    "vitest": "^4.1.10"
   },
   "dependencies": {
+    "@prisma/client": "^6.19.3",
     "bcryptjs": "^2.4.3",
     "chalk": "^3.0.0",
     "cookie-parser": "^1.4.6",
@@ -55,6 +66,7 @@
     "socket.io": "^4.8.1",
     "tsc": "^2.0.4",
     "typescript": "^5.4.5",
-    "uuid": "^10.0.0"
+    "uuid": "^10.0.0",
+    "zod": "^4.4.3"
   }
 }
