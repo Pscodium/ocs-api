@@ -1,7 +1,7 @@
 import type { Router } from 'express';
 import type { AppModule } from '../../core/server/moduleRegistry';
 import type { AppDeps } from '../../core/deps';
-import { registerCoreRoutes } from './core.routes';
+import { registerCoreRoutes } from './http/core.routes';
 
 /**
  * Core module (docs §8 step 6). The only domain responsibility beyond auth-check

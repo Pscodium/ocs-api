@@ -1,6 +1,6 @@
 import type { Request, Response, Router } from 'express';
-import { auth } from '../../shared/middleware/auth.middleware';
-import { checkRateLimit, loadUserFeatures, requireFeature } from '../../shared/featureFlags/middleware';
+import { auth } from '../../../shared/middleware/auth.middleware';
+import { checkRateLimit, loadUserFeatures, requireFeature } from '../../../shared/featureFlags/middleware';
 import { financialController as fc } from './financial.controller';
 
 /**

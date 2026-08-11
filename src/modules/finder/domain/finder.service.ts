@@ -1,5 +1,5 @@
-import { HttpError } from '../../core/http/httpError';
-import { FinderRepository, type EstablishmentData, type ProductData } from './finder.repository';
+import { HttpError } from '../../../core/http/httpError';
+import { FinderRepository, type EstablishmentData, type ProductData } from '../infra/finder.repository';
 
 export interface ProductWhere {
     id: string;

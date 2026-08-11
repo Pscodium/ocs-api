@@ -1,8 +1,8 @@
 import type { Router } from 'express';
 import type { AppModule } from '../../core/server/moduleRegistry';
 import type { AppDeps } from '../../core/deps';
-import { registerArticlesRoutes } from './articles/articles.routes';
-import { registerFilesRoutes } from './files/files.routes';
+import { registerArticlesRoutes } from './articles/http/articles.routes';
+import { registerFilesRoutes } from './files/http/files.routes';
 
 /**
  * Storage module (docs §3.2 / §4). Absorbs articles + storage/files out of the

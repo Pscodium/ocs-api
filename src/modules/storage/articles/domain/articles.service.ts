@@ -1,6 +1,6 @@
 import randomColor from 'randomcolor';
-import { HttpError } from '../../../core/http/httpError';
-import { ArticlesRepository } from './articles.repository';
+import { HttpError } from '../../../../core/http/httpError';
+import { ArticlesRepository } from '../infra/articles.repository';
 
 interface TagInput {
     title?: string;

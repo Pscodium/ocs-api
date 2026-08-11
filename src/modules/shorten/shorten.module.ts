@@ -1,9 +1,9 @@
 import type { Router } from 'express';
 import type { AppModule } from '../../core/server/moduleRegistry';
 import type { AppDeps } from '../../core/deps';
-import { ShortenService } from './shorten.service';
-import { createShortenController } from './shorten.controller';
-import { registerShortenRoutes } from './shorten.routes';
+import { ShortenService } from './domain/shorten.service';
+import { createShortenController } from './http/shorten.controller';
+import { registerShortenRoutes } from './http/shorten.routes';
 
 /**
  * Shorten module (pilot for the modular pattern, docs §8 step 4).

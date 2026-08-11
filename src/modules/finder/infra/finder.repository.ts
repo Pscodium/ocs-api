@@ -1,4 +1,4 @@
-import { prisma } from '../../config/database';
+import { prisma } from '../../../config/database';
 
 /**
  * ORM boundary for finder — now backed by PRISMA (docs §8 step 3/9; ORM decision

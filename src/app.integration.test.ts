@@ -7,7 +7,7 @@ import type { Env } from './config/env';
 import { registerModules } from './core/server/moduleRegistry';
 import { errorHandler, notFoundHandler } from './core/http/errorHandler';
 import { shortenModule, buildShortenController } from './modules/shorten/shorten.module';
-import { registerShortenLegacyRoutes } from './modules/shorten/shorten.legacy';
+import { registerShortenLegacyRoutes } from './modules/shorten/http/shorten.legacy';
 
 // Redis mock seeded with one known short code (no auth needed for redirect).
 function redisWith(store: Record<string, Record<string, string>>): RedisClientType {

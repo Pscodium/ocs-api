@@ -6,7 +6,7 @@ import type { AppDeps } from './core/deps';
 import { registerModules, type AppModule } from './core/server/moduleRegistry';
 import { errorHandler, notFoundHandler } from './core/http/errorHandler';
 import { shortenModule, buildShortenController } from './modules/shorten/shorten.module';
-import { registerShortenLegacyRoutes } from './modules/shorten/shorten.legacy';
+import { registerShortenLegacyRoutes } from './modules/shorten/http/shorten.legacy';
 import { finderModule } from './modules/finder/finder.module';
 import { financialModule } from './modules/financial/financial.module';
 import { coreModule } from './modules/core/core.module';

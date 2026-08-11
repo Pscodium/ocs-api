@@ -1,6 +1,6 @@
 import type { NextFunction, Request, RequestHandler, Response } from 'express';
-import { HttpError } from '../../../core/http/httpError';
-import { ArticlesService } from './articles.service';
+import { HttpError } from '../../../../core/http/httpError';
+import { ArticlesService } from '../domain/articles.service';
 
 /**
  * Articles HTTP layer. Preserves legacy responses exactly: 404 as { message },

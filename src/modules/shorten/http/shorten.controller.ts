@@ -1,9 +1,9 @@
 import type { RequestHandler } from 'express';
-import { asyncHandler } from '../../core/http/asyncHandler';
-import { HttpError } from '../../core/http/httpError';
-import { listUrlsQuery, shortenUrlBody } from './shorten.dto';
-import { notFoundPage } from './notFound.page';
-import type { ShortenService } from './shorten.service';
+import { asyncHandler } from '../../../core/http/asyncHandler';
+import { HttpError } from '../../../core/http/httpError';
+import { listUrlsQuery, shortenUrlBody } from '../domain/shorten.dto';
+import { notFoundPage } from '../domain/notFound.page';
+import type { ShortenService } from '../domain/shorten.service';
 
 export interface ShortenController {
     shorten: RequestHandler;

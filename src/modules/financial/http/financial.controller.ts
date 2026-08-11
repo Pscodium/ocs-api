@@ -1,7 +1,7 @@
 import type { Request, RequestHandler, Response } from 'express';
-import { getIdentity } from '../../shared/featureFlags/client';
-import { serializeBillsFromRows, serializeCategoriesFromRows } from './dtos/month.dto';
-import { FinancialRepository } from './financial.repository';
+import { getIdentity } from '../../../shared/featureFlags/client';
+import { serializeBillsFromRows, serializeCategoriesFromRows } from '../domain/month.dto';
+import { FinancialRepository } from '../infra/financial.repository';
 import {
     composeCategoriesWithBills,
     flattenLegacyBills,
@@ -9,7 +9,7 @@ import {
     normalizeBills,
     normalizeCategories,
     parseMonthPayload,
-} from './financial.helpers';
+} from '../domain/financial.helpers';
 
 /**
  * Financial controller — native TS + PRISMA (ported from the 1448-line

@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { serializeBillsFromRows } from './dtos/month.dto';
+import { serializeBillsFromRows } from './month.dto';
 
 /**
  * Pure normalization/serialization helpers for months (ported verbatim from

@@ -1,4 +1,4 @@
-import { prisma } from '../../../config/database';
+import { prisma } from '../../../../config/database';
 
 /**
  * Articles/Tags repository on PRISMA (docs §8 step 6; ORM = Prisma). Uses the

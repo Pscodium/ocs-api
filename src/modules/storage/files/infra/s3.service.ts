@@ -1,6 +1,6 @@
 import S3 from 'aws-sdk/clients/s3';
 import { CONFIG } from './s3.config';
-import * as logger from '../../../shared/logger';
+import * as logger from '../../../../shared/logger';
 
 type ProgressCallback = (percent: number) => void;
 

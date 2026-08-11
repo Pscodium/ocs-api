@@ -1,6 +1,6 @@
 import type { Router } from 'express';
-import { auth } from '../../../shared/middleware/auth.middleware';
-import { Permissions } from '../../../shared/enums';
+import { auth } from '../../../../shared/middleware/auth.middleware';
+import { Permissions } from '../../../../shared/enums';
 import { createArticlesController } from './articles.controller';
 
 /**

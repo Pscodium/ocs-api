@@ -1,5 +1,5 @@
 import type { Router } from 'express';
-import { auth } from '../../shared/middleware/auth.middleware';
+import { auth } from '../../../shared/middleware/auth.middleware';
 
 /**
  * Core is NOT a business module (docs §3.2). Its only domain responsibility is

@@ -1,4 +1,4 @@
-import { prisma } from '../../../config/database';
+import { prisma } from '../../../../config/database';
 
 /**
  * Files/Folder repository on PRISMA (docs §8 step 6). Uses the explicit join model

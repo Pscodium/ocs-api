@@ -1,7 +1,7 @@
 import type { Router } from 'express';
 import multer from 'multer';
-import { auth } from '../../../shared/middleware/auth.middleware';
-import { Permissions } from '../../../shared/enums';
+import { auth } from '../../../../shared/middleware/auth.middleware';
+import { Permissions } from '../../../../shared/enums';
 import { createFilesController } from './files.controller';
 
 /**

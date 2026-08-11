@@ -1,6 +1,6 @@
 import type { NextFunction, Request, RequestHandler, Response } from 'express';
-import { HttpError } from '../../core/http/httpError';
-import { FinderService, type ProductWhere } from './finder.service';
+import { HttpError } from '../../../core/http/httpError';
+import { FinderService, type ProductWhere } from '../domain/finder.service';
 
 /**
  * Thin HTTP layer. Renders domain HttpError in the LEGACY `{ error: message }`

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import { HttpError } from '../../core/http/httpError';
+import { HttpError } from '../../../core/http/httpError';
 import { FinderService } from './finder.service';
-import type { FinderRepository } from './finder.repository';
+import type { FinderRepository } from '../infra/finder.repository';
 
 function repoMock(overrides: Partial<Record<keyof FinderRepository, unknown>> = {}) {
     return {

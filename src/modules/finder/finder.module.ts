@@ -1,8 +1,8 @@
 import type { Router } from 'express';
 import type { AppModule } from '../../core/server/moduleRegistry';
 import type { AppDeps } from '../../core/deps';
-import { apiKeyValidator } from './finder.middleware';
-import { createFinderController } from './finder.controller';
+import { apiKeyValidator } from './http/finder.middleware';
+import { createFinderController } from './http/finder.controller';
 
 /**
  * Finder module — native TS port (docs §8 step 5). Backed by existing Sequelize

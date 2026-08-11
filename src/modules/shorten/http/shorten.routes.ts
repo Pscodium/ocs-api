@@ -1,5 +1,5 @@
 import type { Router } from 'express';
-import { auth } from '../../shared/middleware/auth.middleware';
+import { auth } from '../../../shared/middleware/auth.middleware';
 import type { ShortenController } from './shorten.controller';
 
 /**

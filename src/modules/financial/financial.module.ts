@@ -1,7 +1,7 @@
 import type { Router } from 'express';
 import type { AppModule } from '../../core/server/moduleRegistry';
 import type { AppDeps } from '../../core/deps';
-import { registerFinancialRoutes } from './financial.routes';
+import { registerFinancialRoutes } from './http/financial.routes';
 
 /**
  * Financial module — native TS shell (docs §8 step 5). Routes + middleware wiring

@@ -1,7 +1,7 @@
 import type { Request, RequestHandler, Response } from 'express';
 import type { Server as SocketServer } from 'socket.io';
-import { StorageInstance } from './s3.service';
-import { FilesRepository } from './files.repository';
+import { StorageInstance } from '../infra/s3.service';
+import { FilesRepository } from '../infra/files.repository';
 
 /**
  * Files/folders HTTP layer (ported from storage.controller.js, ~507 lines). DB via

@@ -1,5 +1,5 @@
-import { prisma } from '../../config/database';
-import type { NormalizedBill, NormalizedCategory } from './financial.helpers';
+import { prisma } from '../../../config/database';
+import type { NormalizedBill, NormalizedCategory } from '../domain/financial.helpers';
 
 /**
  * Financial repository on PRISMA (docs §8 step 6). Wraps months/categories/bills +
