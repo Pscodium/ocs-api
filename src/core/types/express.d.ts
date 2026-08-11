@@ -33,9 +33,9 @@ declare global {
 
             // Feature flags (src/middleware/featureFlags.js)
             features?: Record<string, unknown>;
-            traits?: Record<string, unknown>;
+            traits?: unknown[];
             planIdentifier?: string;
-            featureAccess?: Record<string, boolean>;
+            featureAccess?: Record<string, string>;
             rateLimitInfo?: RateLimitInfo;
 
             // Finder API-key auth

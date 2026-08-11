@@ -32,7 +32,7 @@ export function requireFeature(featureName: string): RequestHandler {
                 });
                 return;
             }
-            req.featureAccess = { feature: featureName, plan: userPlan, identifier: planIdentifier } as Record<string, boolean>;
+            req.featureAccess = { feature: featureName, plan: userPlan, identifier: planIdentifier };
             next();
         } catch (error) {
             console.error('Error checking feature access:', error);
@@ -163,7 +163,7 @@ export async function getRateLimitStatus(
     }
 }
 
-export async function loadUserFeatures(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function loadUserFeatures(req: Request, _res: Response, next: NextFunction): Promise<void> {
     try {
         const userPlan = req.auth?.plan;
         if (!userPlan) {

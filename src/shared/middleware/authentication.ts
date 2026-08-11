@@ -71,7 +71,7 @@ class AuthService {
         }
     }
 
-    async loggedOrNot(req: Request, res: Response, next: NextFunction): Promise<void> {
+    async loggedOrNot(req: Request, _res: Response, next: NextFunction): Promise<void> {
         const token = getBearerToken(req);
         if (!token) {
             req.user = undefined;
