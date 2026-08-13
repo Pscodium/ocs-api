@@ -4,8 +4,9 @@ import { auth } from '@shared/middleware/auth.middleware';
 
 export function registerNerRoutes(router: Router): void {
     const cn = createNerController();
+    router.use(auth.apiKeyValidator);
     
-    router.get('/labels', auth.apiKeyValidator, cn.getLabels);
-    router.post('/mask', auth.apiKeyValidator, cn.mask);
-    router.post('/mask/custom', auth.apiKeyValidator, cn.maskCustom);
+    router.get('/labels', cn.getLabels);
+    router.post('/mask', cn.mask);
+    router.post('/mask/custom', cn.maskCustom);
 }
