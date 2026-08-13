@@ -100,7 +100,6 @@ class AuthService {
             return;
         }
         if (apiKey !== env.API_KEY) {
-            console.log('DBG apiKey=%j (type %s) env=%j equal=%s', apiKey, Array.isArray(apiKey) ? 'array' : typeof apiKey, env.API_KEY, apiKey === env.API_KEY);
             res.status(401).json({ error: 'Invalid API Key' });
             return;
         }

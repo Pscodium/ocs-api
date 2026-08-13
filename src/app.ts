@@ -8,6 +8,7 @@ import { errorHandler, notFoundHandler } from './core/http/errorHandler';
 import { shortenModule, buildShortenController } from './modules/shorten/shorten.module';
 import { registerShortenLegacyRoutes } from './modules/shorten/http/shorten.legacy';
 import { finderModule } from './modules/finder/finder.module';
+import { nerModule } from './modules/ner/ner.module';
 import { financialModule } from './modules/financial/financial.module';
 import { coreModule } from './modules/core/core.module';
 import { storageModule } from './modules/storage/storage.module';
@@ -48,6 +49,10 @@ export function createApp(deps: AppDeps): Express {
         storageModule,
         // Financial: native TS shell (routes/middleware TS; controller via interop).
         financialModule,
+        // NER: native TS module, prefix '/ner'. API-key auth. MUST be registered
+        // before finder's legacy root ('') mount, else finder's root api-key gate
+        // intercepts /ner/* first (docs §5, moduleRegistry legacy-last ordering).
+        nerModule,
         // Finder: native TS module (Sequelize-backed repository). API-key auth.
         finderModule,
         // Shorten canonical (/shorten). Legacy root aliases handled separately below.
