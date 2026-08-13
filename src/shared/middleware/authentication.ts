@@ -95,12 +95,12 @@ class AuthService {
 
     async apiKeyValidator(req: Request, res: Response, next: NextFunction): Promise<void> {
         const apiKey = req.headers['x-api-key'];
-        console.log('aqui ', apiKey);
         if (!apiKey) {
             res.status(401).json({ error: 'API Key is required' });
             return;
         }
         if (apiKey !== env.API_KEY) {
+            console.log('DBG apiKey=%j (type %s) env=%j equal=%s', apiKey, Array.isArray(apiKey) ? 'array' : typeof apiKey, env.API_KEY, apiKey === env.API_KEY);
             res.status(401).json({ error: 'Invalid API Key' });
             return;
         }
