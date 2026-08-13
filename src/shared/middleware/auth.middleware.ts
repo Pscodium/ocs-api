@@ -11,6 +11,8 @@ export interface AuthMiddleware {
     sessionOrJwt: RequestHandler;
     /** Populates req.user when a token is present; never rejects. */
     loggedOrNot: RequestHandler;
+    /** Validates the API key for modules. */
+    apiKeyValidator: RequestHandler;
     /** GET /check/auth handler. */
     check: RequestHandler;
     /** Factory: requires all listed permissions (admin bypasses). Array may contain

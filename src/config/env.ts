@@ -37,6 +37,9 @@ const schema = z.object({
     AUTH_AUDIENCE: z.string().optional(),
     AUTH_JWKS_URL: z.string().url().optional(),
 
+    // API key for modules (finder, ner, etc.) and the GET /check/auth endpoint.
+    API_KEY: z.string().optional(),
+
     // Redis
     REDIS_URL: z.string().optional(),
 
@@ -65,6 +68,11 @@ const schema = z.object({
         .string()
         .optional()
         .transform((v) => v === 'true' || v === '1'),
+
+    // NER Configs
+    NER_API_KEY: z.string().optional(),
+    NER_API_URL: z.string().optional(),
+    NER_API_TIMEOUT_MS: z.coerce.number().int().positive().optional(),
 });
 
 export type Env = z.infer<typeof schema>;

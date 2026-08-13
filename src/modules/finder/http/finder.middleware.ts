@@ -1,5 +1,5 @@
 import type { RequestHandler } from 'express';
-import { env } from '../../../config/env';
+import { env } from '@config/env';
 
 /**
  * API-key gate for the finder module (TS port of api-key.middleware.js).

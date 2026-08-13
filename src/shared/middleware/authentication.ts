@@ -1,5 +1,6 @@
 import { createRemoteJWKSet, jwtVerify, type JWTPayload } from 'jose';
 import type { NextFunction, Request, RequestHandler, Response } from 'express';
+import { env } from '@config/env';
 
 /**
  * JWT/session auth (ported from authentication.js). Validates access tokens via a
@@ -91,6 +92,19 @@ class AuthService {
             next();
         }
     }
+
+    async apiKeyValidator(req: Request, res: Response, next: NextFunction): Promise<void> {
+        const apiKey = req.headers['x-api-key'];
+        if (!apiKey) {
+            res.status(401).json({ error: 'API Key is required' });
+            return;
+        }
+        if (apiKey !== env.API_KEY) {
+            res.status(401).json({ error: 'Invalid API Key' });
+            return;
+        }
+        next();
+    };
 
     async check(req: Request, res: Response): Promise<void> {
         try {
