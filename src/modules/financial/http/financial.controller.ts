@@ -359,7 +359,7 @@ export const financialController: FinancialController = {
     // ==================== INVESTMENTS ====================
     getInvestments: async (req: Request, res: Response) => {
         try {
-            return res.json(await repo.findInvestments(req.userId as string, req.params.monthKey));
+            return res.json(await repo.findInvestments(req.userId as string));
         } catch (e) {
             console.error(e);
             return res.sendStatus(500);
@@ -398,9 +398,9 @@ export const financialController: FinancialController = {
     updateInvestment: async (req: Request, res: Response) => {
         try {
             const userId = req.userId as string;
-            const { monthKey, investmentId } = req.params;
+            const { investmentId } = req.params;
             const d = req.body;
-            const investment = await repo.findInvestmentScoped(userId, monthKey, investmentId);
+            const investment = await repo.findInvestment(userId, investmentId);
             if (!investment) return res.status(404).json({ error: 'Investment não encontrado' });
             const updated = await repo.updateInvestment(investmentId, {
                 name: d.name,
@@ -418,7 +418,7 @@ export const financialController: FinancialController = {
     },
     deleteInvestment: async (req: Request, res: Response) => {
         try {
-            const result = await repo.deleteInvestment(req.userId as string, req.params.monthKey, req.params.investmentId);
+            const result = await repo.deleteInvestment(req.userId as string, req.params.investmentId);
             if (result === 0) return res.status(404).json({ error: 'Investment não encontrado' });
             return res.status(204).send();
         } catch (e) {
@@ -430,7 +430,7 @@ export const financialController: FinancialController = {
     // ==================== GOALS ====================
     getGoals: async (req: Request, res: Response) => {
         try {
-            return res.json(await repo.findGoals(req.userId as string, req.params.monthKey));
+            return res.json(await repo.findGoals(req.userId as string));
         } catch (e) {
             console.error(e);
             return res.sendStatus(500);
@@ -467,9 +467,9 @@ export const financialController: FinancialController = {
     updateGoal: async (req: Request, res: Response) => {
         try {
             const userId = req.userId as string;
-            const { monthKey, goalId } = req.params;
+            const { goalId } = req.params;
             const d = req.body;
-            const goal = await repo.findGoalScoped(userId, monthKey, goalId);
+            const goal = await repo.findGoal(userId, goalId);
             if (!goal) return res.status(404).json({ error: 'Goal não encontrado' });
             const updated = await repo.updateGoal(goalId, {
                 name: d.name,
@@ -486,7 +486,7 @@ export const financialController: FinancialController = {
     },
     deleteGoal: async (req: Request, res: Response) => {
         try {
-            const result = await repo.deleteGoal(req.userId as string, req.params.monthKey, req.params.goalId);
+            const result = await repo.deleteGoal(req.userId as string, req.params.goalId);
             if (result === 0) return res.status(404).json({ error: 'Goal não encontrado' });
             return res.status(204).send();
         } catch (e) {
@@ -498,7 +498,7 @@ export const financialController: FinancialController = {
     // ==================== SUBSCRIPTIONS ====================
     getSubscriptions: async (req: Request, res: Response) => {
         try {
-            return res.json(await repo.findSubscriptions(req.userId as string, req.params.monthKey));
+            return res.json(await repo.findSubscriptions(req.userId as string));
         } catch (e) {
             console.error(e);
             return res.sendStatus(500);
@@ -538,9 +538,9 @@ export const financialController: FinancialController = {
     updateSubscription: async (req: Request, res: Response) => {
         try {
             const userId = req.userId as string;
-            const { monthKey, subscriptionId } = req.params;
+            const { subscriptionId } = req.params;
             const d = req.body;
-            const subscription = await repo.findSubscriptionScoped(userId, monthKey, subscriptionId);
+            const subscription = await repo.findSubscription(userId, subscriptionId);
             if (!subscription) return res.status(404).json({ error: 'Subscription não encontrado' });
             const updated = await repo.updateSubscription(subscriptionId, {
                 name: d.name,
@@ -559,7 +559,7 @@ export const financialController: FinancialController = {
     },
     deleteSubscription: async (req: Request, res: Response) => {
         try {
-            const result = await repo.deleteSubscription(req.userId as string, req.params.monthKey, req.params.subscriptionId);
+            const result = await repo.deleteSubscription(req.userId as string, req.params.subscriptionId);
             if (result === 0) return res.status(404).json({ error: 'Subscription não encontrado' });
             return res.status(204).send();
         } catch (e) {

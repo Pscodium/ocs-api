@@ -85,8 +85,8 @@ export class FinancialRepository {
             (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', C.CATEGORYID,'categoryId', C.CATEGORYID,'name', C.NAME,'type', C.TYPE,'splitBy', C.SPLITBY,'sortOrder', C.SORTORDER)) FROM month_categories C WHERE C.MONTHKEY = M.MONTHKEY AND C.USERID = M.USERID ORDER BY C.SORTORDER ASC) AS categories,
             (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', MB.ID,'categoryId', MB.CATEGORYID,'name', MB.NAME,'type', MB.TYPE,'amount', MB.AMOUNT,'dueDate', MB.DUEDATE,'paid', MB.PAID,'sortOrder', MB.SORTORDER)) FROM month_bills MB WHERE MB.MONTHKEY = M.MONTHKEY AND MB.USERID = M.USERID ORDER BY MB.SORTORDER ASC) AS bills,
             (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', B.ID,'categoryId', B.CATEGORYID,'categoryName', B.CATEGORYNAME,'limit', B.LIMIT,'spent', B.SPENT,'monthKey', B.MONTHKEY)) FROM budgets B WHERE B.MONTHKEY = M.MONTHKEY AND B.USERID = M.USERID) AS budgets,
-            (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', I.ID,'name', I.NAME,'type', I.TYPE,'amount', I.AMOUNT,'purchaseDate', I.PURCHASEDATE,'currentValue', I.CURRENTVALUE,'notes', I.NOTES)) FROM investments I WHERE I.MONTHKEY = M.MONTHKEY AND I.USERID = M.USERID) AS investments,
-            (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', G.ID,'name', G.NAME,'targetAmount', G.TARGETAMOUNT,'currentAmount', G.CURRENTAMOUNT,'deadline', G.DEADLINE,'category', G.CATEGORY)) FROM goals G WHERE G.MONTHKEY = M.MONTHKEY AND G.USERID = M.USERID) AS goals,
+            (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', I.ID,'name', I.NAME,'type', I.TYPE,'amount', I.AMOUNT,'purchaseDate', I.PURCHASEDATE,'currentValue', I.CURRENTVALUE,'notes', I.NOTES)) FROM investments I WHERE I.USERID = M.USERID) AS investments,
+            (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', G.ID,'name', G.NAME,'targetAmount', G.TARGETAMOUNT,'currentAmount', G.CURRENTAMOUNT,'deadline', G.DEADLINE,'category', G.CATEGORY)) FROM goals G WHERE G.USERID = M.USERID) AS goals,
             (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', S.ID,'name', S.NAME,'amount', S.AMOUNT,'billingCycle', S.BILLINGCYCLE,'nextBillingDate', S.NEXTBILLINGDATE,'category', S.CATEGORY,'active', S.ACTIVE,'notes', S.NOTES)) FROM subscriptions S WHERE S.USERID = M.USERID) AS subscriptions
             FROM month M WHERE M.USERID = ? ORDER BY M.MONTHKEY DESC;`;
         return prisma.$queryRawUnsafe<Record<string, unknown>[]>(sql, userId);
@@ -183,14 +183,15 @@ export class FinancialRepository {
     }
 
     // ---- Investments ----
-    findInvestments(userId: string, monthKey: string) {
-        return prisma.investment.findMany({ where: { userId, month_key: monthKey }, orderBy: { createdAt: 'asc' } });
+    // Generalist entity: month_key only records the creation month, it is not a
+    // scope for lookups — an investment created in 2026-01 must stay editable
+    // from any month (docs: financial goals/investments/subscriptions aren't
+    // per-month like budgets).
+    findInvestments(userId: string) {
+        return prisma.investment.findMany({ where: { userId }, orderBy: { createdAt: 'asc' } });
     }
     findInvestment(userId: string, id: string) {
         return prisma.investment.findFirst({ where: { id, userId } });
-    }
-    findInvestmentScoped(userId: string, monthKey: string, id: string) {
-        return prisma.investment.findFirst({ where: { id, userId, month_key: monthKey } });
     }
     createInvestment(data: Record<string, unknown>) {
         return prisma.investment.create({ data: data as never });
@@ -198,20 +199,17 @@ export class FinancialRepository {
     updateInvestment(id: string, data: Record<string, unknown>) {
         return prisma.investment.update({ where: { id }, data: data as never });
     }
-    async deleteInvestment(userId: string, monthKey: string, id: string): Promise<number> {
-        const { count } = await prisma.investment.deleteMany({ where: { id, userId, month_key: monthKey } });
+    async deleteInvestment(userId: string, id: string): Promise<number> {
+        const { count } = await prisma.investment.deleteMany({ where: { id, userId } });
         return count;
     }
 
-    // ---- Goals ----
-    findGoals(userId: string, monthKey: string) {
-        return prisma.goal.findMany({ where: { userId, month_key: monthKey }, orderBy: { createdAt: 'asc' } });
+    // ---- Goals ---- (generalist, see Investments note above)
+    findGoals(userId: string) {
+        return prisma.goal.findMany({ where: { userId }, orderBy: { createdAt: 'asc' } });
     }
     findGoal(userId: string, id: string) {
         return prisma.goal.findFirst({ where: { id, userId } });
-    }
-    findGoalScoped(userId: string, monthKey: string, id: string) {
-        return prisma.goal.findFirst({ where: { id, userId, month_key: monthKey } });
     }
     createGoal(data: Record<string, unknown>) {
         return prisma.goal.create({ data: data as never });
@@ -219,20 +217,17 @@ export class FinancialRepository {
     updateGoal(id: string, data: Record<string, unknown>) {
         return prisma.goal.update({ where: { id }, data: data as never });
     }
-    async deleteGoal(userId: string, monthKey: string, id: string): Promise<number> {
-        const { count } = await prisma.goal.deleteMany({ where: { id, userId, month_key: monthKey } });
+    async deleteGoal(userId: string, id: string): Promise<number> {
+        const { count } = await prisma.goal.deleteMany({ where: { id, userId } });
         return count;
     }
 
-    // ---- Subscriptions ----
-    findSubscriptions(userId: string, monthKey: string) {
-        return prisma.subscription.findMany({ where: { userId, month_key: monthKey }, orderBy: { createdAt: 'asc' } });
+    // ---- Subscriptions ---- (generalist, see Investments note above)
+    findSubscriptions(userId: string) {
+        return prisma.subscription.findMany({ where: { userId }, orderBy: { createdAt: 'asc' } });
     }
     findSubscription(userId: string, id: string) {
         return prisma.subscription.findFirst({ where: { id, userId } });
-    }
-    findSubscriptionScoped(userId: string, monthKey: string, id: string) {
-        return prisma.subscription.findFirst({ where: { id, userId, month_key: monthKey } });
     }
     createSubscription(data: Record<string, unknown>) {
         return prisma.subscription.create({ data: data as never });
@@ -240,8 +235,8 @@ export class FinancialRepository {
     updateSubscription(id: string, data: Record<string, unknown>) {
         return prisma.subscription.update({ where: { id }, data: data as never });
     }
-    async deleteSubscription(userId: string, monthKey: string, id: string): Promise<number> {
-        const { count } = await prisma.subscription.deleteMany({ where: { id, userId, month_key: monthKey } });
+    async deleteSubscription(userId: string, id: string): Promise<number> {
+        const { count } = await prisma.subscription.deleteMany({ where: { id, userId } });
         return count;
     }
 
