@@ -532,7 +532,7 @@ export const financialController: FinancialController = {
                 billing_cycle: d.billingCycle,
                 next_billing_date: toDate(d.nextBillingDate),
                 category: d.category || null,
-                active: d.active !== undefined ? d.active : true,
+                active: d.active !== undefined ? Boolean(d.active) : true,
                 notes: d.notes || null,
                 userId,
             });
@@ -555,7 +555,7 @@ export const financialController: FinancialController = {
                 billing_cycle: d.billingCycle,
                 next_billing_date: toDateOpt(d.nextBillingDate),
                 category: d.category,
-                active: d.active,
+                active: d.active !== undefined ? Boolean(d.active) : undefined,
                 notes: d.notes,
             });
             return res.json(updated);
