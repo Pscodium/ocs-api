@@ -85,6 +85,7 @@ export class FinancialRepository {
             (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', C.CATEGORYID,'categoryId', C.CATEGORYID,'name', C.NAME,'type', C.TYPE,'splitBy', C.SPLITBY,'sortOrder', C.SORTORDER)) FROM month_categories C WHERE C.MONTHKEY = M.MONTHKEY AND C.USERID = M.USERID ORDER BY C.SORTORDER ASC) AS categories,
             (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', MB.ID,'categoryId', MB.CATEGORYID,'name', MB.NAME,'type', MB.TYPE,'amount', MB.AMOUNT,'dueDate', MB.DUEDATE,'paid', MB.PAID,'sortOrder', MB.SORTORDER)) FROM month_bills MB WHERE MB.MONTHKEY = M.MONTHKEY AND MB.USERID = M.USERID ORDER BY MB.SORTORDER ASC) AS bills,
             (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', B.ID,'categoryId', B.CATEGORYID,'categoryName', B.CATEGORYNAME,'limit', B.LIMIT,'spent', B.SPENT,'monthKey', B.MONTHKEY)) FROM budgets B WHERE B.MONTHKEY = M.MONTHKEY AND B.USERID = M.USERID) AS budgets,
+            (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', T.ID,'description', T.DESCRIPTION,'amount', T.AMOUNT,'date', T.DATE,'tag', T.TAG,'monthKey', T.MONTHKEY)) FROM transactions T WHERE T.MONTHKEY = M.MONTHKEY AND T.USERID = M.USERID) AS transactions,
             (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', I.ID,'name', I.NAME,'type', I.TYPE,'amount', I.AMOUNT,'purchaseDate', I.PURCHASEDATE,'currentValue', I.CURRENTVALUE,'notes', I.NOTES)) FROM investments I WHERE I.USERID = M.USERID) AS investments,
             (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', G.ID,'name', G.NAME,'targetAmount', G.TARGETAMOUNT,'currentAmount', G.CURRENTAMOUNT,'deadline', G.DEADLINE,'category', G.CATEGORY)) FROM goals G WHERE G.USERID = M.USERID) AS goals,
             (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', S.ID,'name', S.NAME,'amount', S.AMOUNT,'billingCycle', S.BILLINGCYCLE,'nextBillingDate', S.NEXTBILLINGDATE,'category', S.CATEGORY,'active', S.ACTIVE,'notes', S.NOTES)) FROM subscriptions S WHERE S.USERID = M.USERID) AS subscriptions
@@ -179,6 +180,27 @@ export class FinancialRepository {
     }
     async deleteBudget(userId: string, monthKey: string, id: string): Promise<number> {
         const { count } = await prisma.budget.deleteMany({ where: { id, userId, month_key: monthKey } });
+        return count;
+    }
+
+    // ---- Transactions ---- (month-scoped, like Budget: registered on a specific day of monthKey)
+    findTransactions(userId: string, monthKey: string) {
+        return prisma.transaction.findMany({ where: { userId, month_key: monthKey }, orderBy: { date: 'asc' } });
+    }
+    findTransaction(userId: string, id: string) {
+        return prisma.transaction.findFirst({ where: { id, userId } });
+    }
+    findTransactionScoped(userId: string, monthKey: string, id: string) {
+        return prisma.transaction.findFirst({ where: { id, userId, month_key: monthKey } });
+    }
+    createTransaction(data: Record<string, unknown>) {
+        return prisma.transaction.create({ data: data as never });
+    }
+    updateTransaction(id: string, data: Record<string, unknown>) {
+        return prisma.transaction.update({ where: { id }, data: data as never });
+    }
+    async deleteTransaction(userId: string, monthKey: string, id: string): Promise<number> {
+        const { count } = await prisma.transaction.deleteMany({ where: { id, userId, month_key: monthKey } });
         return count;
     }
 

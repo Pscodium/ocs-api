@@ -46,6 +46,10 @@ export interface FinancialController {
     createSubscription: RequestHandler;
     updateSubscription: RequestHandler;
     deleteSubscription: RequestHandler;
+    getTransactions: RequestHandler;
+    createTransaction: RequestHandler;
+    updateTransaction: RequestHandler;
+    deleteTransaction: RequestHandler;
     apiHealthCheck: RequestHandler;
     getPlanIdentity: RequestHandler;
 }
@@ -119,6 +123,7 @@ export const financialController: FinancialController = {
                     investments: row.investments,
                     goals: row.goals,
                     subscriptions: row.subscriptions,
+                    transactions: row.transactions,
                 };
             });
 
@@ -269,6 +274,7 @@ export const financialController: FinancialController = {
 
             const categories = await repo.findCategories(userId, monthKey);
             const bills = await repo.findBills(userId, monthKey);
+            const transactions = await repo.findTransactions(userId, monthKey);
             const legacyPayload = parseMonthPayload(month.data);
             const { bills: _legacyBills, ...monthBasePayload } = legacyPayload;
 
@@ -280,6 +286,7 @@ export const financialController: FinancialController = {
                     serializeBillsFromRows(bills),
                     legacyPayload.categories || [],
                 ),
+                transactions,
             });
         } catch (e) {
             console.error(e);
@@ -561,6 +568,80 @@ export const financialController: FinancialController = {
         try {
             const result = await repo.deleteSubscription(req.userId as string, req.params.subscriptionId);
             if (result === 0) return res.status(404).json({ error: 'Subscription não encontrado' });
+            return res.status(204).send();
+        } catch (e) {
+            console.error(e);
+            return res.sendStatus(500);
+        }
+    },
+
+    // ==================== TRANSACTIONS ====================
+    getTransactions: async (req: Request, res: Response) => {
+        try {
+            return res.json(await repo.findTransactions(req.userId as string, req.params.monthKey));
+        } catch (e) {
+            console.error(e);
+            return res.sendStatus(500);
+        }
+    },
+    createTransaction: async (req: Request, res: Response) => {
+        try {
+            const userId = req.userId as string;
+            const { monthKey } = req.params;
+            const d = req.body;
+            if (!d.description || !d.description.trim()) return res.status(400).json({ error: 'description é obrigatória' });
+            if (!d.amount || d.amount <= 0) return res.status(400).json({ error: 'amount deve ser maior que 0' });
+            if (!d.date) return res.status(400).json({ error: 'date é obrigatória' });
+            if (typeof d.date !== 'string' || !d.date.startsWith(monthKey)) {
+                return res.status(400).json({ error: 'date deve pertencer ao monthKey informado' });
+            }
+
+            const existing = await repo.findTransaction(userId, d.id);
+            if (existing) return res.status(204).send();
+
+            const transaction = await repo.createTransaction({
+                id: d.id,
+                month_key: monthKey,
+                description: d.description,
+                amount: d.amount,
+                date: toDate(d.date),
+                tag: d.tag || null,
+                userId,
+            });
+            return res.status(201).json(transaction);
+        } catch (e) {
+            console.error(e);
+            return res.sendStatus(500);
+        }
+    },
+    updateTransaction: async (req: Request, res: Response) => {
+        try {
+            const userId = req.userId as string;
+            const { monthKey, transactionId } = req.params;
+            const d = req.body;
+            if (d.date !== undefined && (typeof d.date !== 'string' || !d.date.startsWith(monthKey))) {
+                return res.status(400).json({ error: 'date deve pertencer ao monthKey informado' });
+            }
+            if (d.amount !== undefined && d.amount <= 0) return res.status(400).json({ error: 'amount deve ser maior que 0' });
+
+            const transaction = await repo.findTransactionScoped(userId, monthKey, transactionId);
+            if (!transaction) return res.status(404).json({ error: 'Transaction não encontrada' });
+            const updated = await repo.updateTransaction(transactionId, {
+                description: d.description,
+                amount: d.amount,
+                date: toDateOpt(d.date),
+                tag: d.tag,
+            });
+            return res.json(updated);
+        } catch (e) {
+            console.error(e);
+            return res.sendStatus(500);
+        }
+    },
+    deleteTransaction: async (req: Request, res: Response) => {
+        try {
+            const result = await repo.deleteTransaction(req.userId as string, req.params.monthKey, req.params.transactionId);
+            if (result === 0) return res.status(404).json({ error: 'Transaction não encontrada' });
             return res.status(204).send();
         } catch (e) {
             console.error(e);

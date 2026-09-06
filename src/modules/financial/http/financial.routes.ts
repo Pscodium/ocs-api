@@ -43,6 +43,12 @@ export function registerFinancialRoutes(router: Router): void {
     router.put('/months/:monthKey/subscriptions/:subscriptionId', auth.sessionOrJwt, requireFeature('financial_subscriptions'), checkRateLimit('subscriptions', 'update'), fc.updateSubscription);
     router.delete('/months/:monthKey/subscriptions/:subscriptionId', auth.sessionOrJwt, requireFeature('financial_subscriptions'), checkRateLimit('subscriptions', 'delete'), fc.deleteSubscription);
 
+    // Transactions
+    router.get('/months/:monthKey/transactions', auth.sessionOrJwt, requireFeature('financial_transactions'), fc.getTransactions);
+    router.post('/months/:monthKey/transactions', auth.sessionOrJwt, requireFeature('financial_transactions'), checkRateLimit('transactions', 'create'), fc.createTransaction);
+    router.put('/months/:monthKey/transactions/:transactionId', auth.sessionOrJwt, requireFeature('financial_transactions'), checkRateLimit('transactions', 'update'), fc.updateTransaction);
+    router.delete('/months/:monthKey/transactions/:transactionId', auth.sessionOrJwt, requireFeature('financial_transactions'), checkRateLimit('transactions', 'delete'), fc.deleteTransaction);
+
     // Health / auth / features / identity
     router.get('/health', fc.apiHealthCheck);
     router.get('/check/auth', auth.sessionOrJwt, auth.check);

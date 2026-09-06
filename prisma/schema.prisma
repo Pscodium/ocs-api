@@ -184,6 +184,20 @@ model Budget {
   @@map("budgets")
 }
 
+model Transaction {
+  id          String   @id @db.VarChar(50)
+  userId      String?  @map("userId")
+  month_key   String   @map("monthKey") @db.VarChar(7)
+  description String   @db.VarChar(200)
+  amount      Decimal  @db.Decimal(10, 2)
+  date        DateTime @db.Date
+  tag         String?  @db.VarChar(100)
+  createdAt   DateTime @default(now()) @db.DateTime(0)
+  updatedAt   DateTime @updatedAt @db.DateTime(0)
+
+  @@map("transactions")
+}
+
 model Goal {
   id             String       @id @db.VarChar(50)
   userId         String?      @map("userId")
